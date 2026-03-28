@@ -10,8 +10,9 @@ import { Sparkles, UtensilsCrossed, Database, BarChart3 } from "lucide-react";
 
 const Index = () => {
   const [ingredients, setIngredients] = useState<Ingredient[]>(() => {
-    const saved = localStorage.getItem("nutribudget-ingredients");
-    return saved ? JSON.parse(saved) : defaultIngredients;
+    // Clear old cached data to use updated prices
+    localStorage.removeItem("nutribudget-ingredients");
+    return defaultIngredients;
   });
   const [meals, setMeals] = useState<MealPlan[]>([]);
   const [activeTab, setActiveTab] = useState("dashboard");
