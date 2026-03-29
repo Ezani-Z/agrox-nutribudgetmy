@@ -16,7 +16,7 @@ export function BudgetSummary({ meals }: BudgetSummaryProps) {
   const allWithinBudget = meals.every(m => m.totalCost >= BUDGET_RANGE.min && m.totalCost <= BUDGET_RANGE.max);
 
   const chartData = meals.map(m => ({
-    day: m.day.slice(0, 3),
+    day: `${m.day.slice(0, 3)} / ${m.dayMY.slice(0, 3)}`,
     cost: m.totalCost,
   }));
 
@@ -25,53 +25,54 @@ export function BudgetSummary({ meals }: BudgetSummaryProps) {
       <Card className="border-border/60">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <DollarSign className="h-4 w-4" /> Average Cost
+            <DollarSign className="h-4 w-4" /> Average Cost / Kos Purata
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-3xl font-bold text-primary">RM{avgCost.toFixed(2)}</p>
-          <p className="text-sm text-muted-foreground">per meal / student</p>
-          <p className="text-xs mt-1 text-muted-foreground">Weekly Total: RM{totalWeekly.toFixed(2)}</p>
+          <p className="text-sm text-muted-foreground">per meal / setiap hidangan</p>
+          <p className="text-xs mt-1 text-muted-foreground">Weekly Total / Jumlah Mingguan: RM{totalWeekly.toFixed(2)}</p>
         </CardContent>
       </Card>
 
       <Card className="border-border/60">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <Target className="h-4 w-4" /> Nutrition Score
+            <Target className="h-4 w-4" /> Nutrition Score / Skor Pemakanan
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-3xl font-bold text-primary">{avgScore}%</p>
-          <p className="text-sm text-muted-foreground">average Quarter-Quarter-Half compliance</p>
+          <p className="text-sm text-muted-foreground">average Suku Suku Separuh compliance</p>
+          <p className="text-xs text-muted-foreground">purata pematuhan Suku Suku Separuh</p>
         </CardContent>
       </Card>
 
       <Card className="border-border/60">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" /> Budget Status
+            <TrendingUp className="h-4 w-4" /> Budget Status / Status Bajet
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className={`text-3xl font-bold ${allWithinBudget ? "text-primary" : "text-destructive"}`}>
-            {allWithinBudget ? "✅ Compliant" : "⚠️ Review"}
+            {allWithinBudget ? "✅ Compliant / Patuh" : "⚠️ Review / Semak"}
           </p>
           <p className="text-sm text-muted-foreground">
-            RMT Limit: RM{BUDGET_RANGE.min.toFixed(2)} – RM{BUDGET_RANGE.max.toFixed(2)}
+            RMT Limit / Had RMT: RM{BUDGET_RANGE.min.toFixed(2)} – RM{BUDGET_RANGE.max.toFixed(2)}
           </p>
         </CardContent>
       </Card>
 
       <Card className="md:col-span-3 border-border/60">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Daily Cost</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Daily Cost / Kos Harian</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis domain={[3, 4.5]} tick={{ fontSize: 12 }} tickFormatter={(v) => `RM${v}`} />
                 <Tooltip formatter={(v: number) => `RM${v.toFixed(2)}`} />
                 <ReferenceLine y={BUDGET_RANGE.min} stroke="hsl(152, 55%, 33%)" strokeDasharray="4 4" label={{ value: "Min", fontSize: 10 }} />
