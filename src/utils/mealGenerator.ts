@@ -1,8 +1,9 @@
-import { Ingredient } from "@/data/ingredients";
+import { Ingredient, StoreId, getPrice } from "@/data/ingredients";
 
 export interface MealPlan {
   id: string;
   day: string;
+  dayMY: string;
   carb: Ingredient;
   protein: Ingredient;
   vegetable: Ingredient;
@@ -16,7 +17,14 @@ export interface MealPlan {
 
 const BUDGET_MIN = 3.50;
 const BUDGET_MAX = 4.00;
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+const DAYS: { en: string; my: string }[] = [
+  { en: "Monday", my: "Isnin" },
+  { en: "Tuesday", my: "Selasa" },
+  { en: "Wednesday", my: "Rabu" },
+  { en: "Thursday", my: "Khamis" },
+  { en: "Friday", my: "Jumaat" },
+];
 
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -36,7 +44,7 @@ function calculateNutritionScore(carbRatio: number, proteinRatio: number, vegFru
   return Math.max(0, Math.round(score));
 }
 
-export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set<string>): MealPlan[] {
+export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set<string>, store: StoreId = "default"): MealPlan[] {
   const available = ingredients.filter(i => i.isAvailable);
   const carbs = available.filter(i => i.category === "carb");
   const proteins = available.filter(i => i.category === "protein");
@@ -51,7 +59,7 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set
   const usedCombos = new Set<string>();
 
   for (const day of DAYS) {
-    if (skipDays?.has(day)) continue;
+    if (skipDays?.has(day.en)) continue;
     const candidates: MealPlan[] = [];
 
     const shuffledCarbs = shuffleArray(carbs);
@@ -66,19 +74,20 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set
             const comboKey = `${carb.id}-${protein.id}-${veg.id}-${fruit.id}`;
             if (usedCombos.has(comboKey)) continue;
 
-            const totalCost = carb.pricePerServing + protein.pricePerServing + veg.pricePerServing + fruit.pricePerServing;
+            const totalCost = getPrice(carb, store) + getPrice(protein, store) + getPrice(veg, store) + getPrice(fruit, store);
 
             if (totalCost < BUDGET_MIN || totalCost > BUDGET_MAX) continue;
 
-            const carbRatio = carb.pricePerServing / totalCost;
-            const proteinRatio = protein.pricePerServing / totalCost;
-            const vegFruitRatio = (veg.pricePerServing + fruit.pricePerServing) / totalCost;
+            const carbRatio = getPrice(carb, store) / totalCost;
+            const proteinRatio = getPrice(protein, store) / totalCost;
+            const vegFruitRatio = (getPrice(veg, store) + getPrice(fruit, store)) / totalCost;
 
             const score = calculateNutritionScore(carbRatio, proteinRatio, vegFruitRatio);
 
             candidates.push({
-              id: `meal-${day}`,
-              day,
+              id: `meal-${day.en}`,
+              day: day.en,
+              dayMY: day.my,
               carb,
               protein,
               vegetable: veg,
@@ -95,7 +104,6 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set
     }
 
     if (candidates.length > 0) {
-      // Pick randomly from the top candidates (within 15 points of best score)
       candidates.sort((a, b) => b.nutritionScore - a.nutritionScore);
       const bestScore = candidates[0].nutritionScore;
       const topCandidates = candidates.filter(c => c.nutritionScore >= bestScore - 15);
