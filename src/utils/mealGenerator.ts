@@ -78,9 +78,12 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set
 
             if (totalCost < BUDGET_MIN || totalCost > BUDGET_MAX) continue;
 
-            const carbRatio = carb.pricePerServing / totalCost;
-            const proteinRatio = protein.pricePerServing / totalCost;
-            const vegFruitRatio = (veg.pricePerServing + fruit.pricePerServing) / totalCost;
+            // Use serving size (grams) — not price — to measure plate proportion
+            const totalWeight = carb.servingSize + protein.servingSize + veg.servingSize + fruit.servingSize;
+
+            const carbRatio = carb.servingSize / totalWeight;
+            const proteinRatio = protein.servingSize / totalWeight;
+            const vegFruitRatio = (veg.servingSize + fruit.servingSize) / totalWeight;
 
             const score = calculateNutritionScore(carbRatio, proteinRatio, vegFruitRatio);
 
@@ -104,12 +107,29 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set
     }
 
     if (candidates.length > 0) {
-      candidates.sort((a, b) => b.nutritionScore - a.nutritionScore);
-      const bestScore = candidates[0].nutritionScore;
-      const topCandidates = candidates.filter(c => c.nutritionScore >= bestScore - 15);
-      const chosen = topCandidates[Math.floor(Math.random() * topCandidates.length)];
-      usedCombos.add(`${chosen.carb.id}-${chosen.protein.id}-${chosen.vegetable.id}-${chosen.fruit.id}`);
-      mealPlans.push(chosen);
+      // First, try to find candidates with score >= 85 (as per PRD)
+      const highScoringCandidates = candidates.filter(c => c.nutritionScore >= 85);
+      if (highScoringCandidates.length > 0) {
+        // Select randomly from high scoring candidates for variety
+        const chosen = highScoringCandidates[Math.floor(Math.random() * highScoringCandidates.length)];
+        usedCombos.add(`${chosen.carb.id}-${chosen.protein.id}-${chosen.vegetable.id}-${chosen.fruit.id}`);
+        mealPlans.push(chosen);
+      } else {
+        // Fall back to original logic if no high scoring candidates
+        candidates.sort((a, b) => b.nutritionScore - a.nutritionScore);
+        const bestScore = candidates[0].nutritionScore;
+        const topCandidates = candidates.filter(c => c.nutritionScore >= bestScore - 15);
+        if (topCandidates.length === 0) {
+          // Fallback to all candidates if filtering results in empty array
+          const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+          usedCombos.add(`${chosen.carb.id}-${chosen.protein.id}-${chosen.vegetable.id}-${chosen.fruit.id}`);
+          mealPlans.push(chosen);
+        } else {
+          const chosen = topCandidates[Math.floor(Math.random() * topCandidates.length)];
+          usedCombos.add(`${chosen.carb.id}-${chosen.protein.id}-${chosen.vegetable.id}-${chosen.fruit.id}`);
+          mealPlans.push(chosen);
+        }
+      }
     }
   }
 
