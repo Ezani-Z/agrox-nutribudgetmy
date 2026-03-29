@@ -62,7 +62,7 @@ const Index = () => {
     setLockedMealIds(new Set());
   }, []);
 
-
+  const handleUpdateIngredients = useCallback((updated: Ingredient[]) => {
     setIngredients(updated);
     localStorage.setItem("nutribudget-ingredients", JSON.stringify(updated));
   }, []);
