@@ -64,12 +64,22 @@ export function BestValueInsights({ ingredients, meals = [] }: BestValueInsights
           const proteinPerRMExpensive = getProteinPerRM(expensive);
           const ratio = proteinPerRMExpensive > 0 ? (proteinPerRMCheap / proteinPerRMExpensive).toFixed(1) : "∞";
 
+          // Find which meal days use the expensive ingredient
+          const affectedMeals = meals.filter(m => {
+            const slot = cat === "carb" ? m.carb : cat === "protein" ? m.protein : cat === "vegetable" ? m.vegetable : m.fruit;
+            return slot.id === expensive.id;
+          });
+          const days = affectedMeals.map(m => m.day);
+          const daysMY = affectedMeals.map(m => m.dayMY);
+
           swaps.push({
             from: expensive,
             to: cheap,
             savingsRM: savings,
             proteinGain,
             calorieChange: cheap.calories - expensive.calories,
+            days,
+            daysMY,
             reason: `Swap ${getName(expensive)} → ${getName(cheap)}: Save RM${savings.toFixed(2)}/serving${proteinGain > 0 ? ` and gain ${proteinGain}g protein` : ""}. ${ratio}× better protein/RM.`,
             reasonMY: `Tukar ${getName(expensive)} → ${getName(cheap)}: Jimat RM${savings.toFixed(2)}/hidangan${proteinGain > 0 ? ` dan dapat ${proteinGain}g lebih protein` : ""}. ${ratio}× lebih baik protein/RM.`,
           });
