@@ -7,6 +7,16 @@ import { IngredientManager } from "@/components/IngredientManager";
 import { defaultIngredients, Ingredient } from "@/data/ingredients";
 import { generateWeeklyMealPlan, MealPlan } from "@/utils/mealGenerator";
 import { Sparkles, UtensilsCrossed, Database, BarChart3 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Index = () => {
   const [ingredients, setIngredients] = useState<Ingredient[]>(() => {
@@ -16,6 +26,7 @@ const Index = () => {
   });
   const [meals, setMeals] = useState<MealPlan[]>([]);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleUpdateIngredients = useCallback((updated: Ingredient[]) => {
     setIngredients(updated);
@@ -42,7 +53,7 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">School Canteen Meal Planner</p>
             </div>
           </div>
-          <Button onClick={handleGenerate} className="gap-2">
+          <Button onClick={() => meals.length > 0 ? setShowConfirm(true) : handleGenerate()} className="gap-2">
             <Sparkles className="h-4 w-4" />
             Generate Meal Plan
           </Button>
@@ -104,6 +115,23 @@ const Index = () => {
           NutriBudget MY · PutraHack 2026 · Theme: Food Safety
         </div>
       </footer>
+
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Generate New Meal Plan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will replace your current meal plan with a new one. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { handleGenerate(); setShowConfirm(false); }}>
+              Generate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
