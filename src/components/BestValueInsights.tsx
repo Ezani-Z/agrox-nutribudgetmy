@@ -1,25 +1,24 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Ingredient, IngredientCategory, StoreId, getPrice, getProteinPerRM, getCaloriesPerRM, categoryLabels } from "@/data/ingredients";
+import { Ingredient, IngredientCategory, getProteinPerRM, getCaloriesPerRM, categoryLabels } from "@/data/ingredients";
 import { TrendingUp, Zap, Award, ArrowRight, Lightbulb, BarChart3 } from "lucide-react";
 import { useLang } from "@/hooks/useLang";
 
 interface BestValueInsightsProps {
   ingredients: Ingredient[];
-  store: StoreId;
 }
 
 interface SwapSuggestion {
   from: Ingredient;
   to: Ingredient;
   savingsRM: number;
-  proteinGain: number; // positive = more protein
+  proteinGain: number;
   calorieChange: number;
   reason: string;
   reasonMY: string;
 }
 
-export function BestValueInsights({ ingredients, store }: BestValueInsightsProps) {
+export function BestValueInsights({ ingredients }: BestValueInsightsProps) {
   const { lang, t } = useLang();
   const available = ingredients.filter(i => i.isAvailable);
 
@@ -29,37 +28,36 @@ export function BestValueInsights({ ingredients, store }: BestValueInsightsProps
   // ── Top 5 protein-per-RM ──
   const proteinRanked = [...available]
     .filter(i => i.proteinG > 0)
-    .map(i => ({ ...i, pprm: getProteinPerRM(i, store), cprm: getCaloriesPerRM(i, store) }))
+    .map(i => ({ ...i, pprm: getProteinPerRM(i), cprm: getCaloriesPerRM(i) }))
     .sort((a, b) => b.pprm - a.pprm)
     .slice(0, 5);
 
   // ── Top 5 calories-per-RM ──
   const calorieRanked = [...available]
-    .map(i => ({ ...i, cprm: getCaloriesPerRM(i, store) }))
+    .map(i => ({ ...i, cprm: getCaloriesPerRM(i) }))
     .sort((a, b) => b.cprm - a.cprm)
     .slice(0, 5);
 
   // ── Smart Swap Suggestions ──
   const swaps: SwapSuggestion[] = [];
-
-  // For each category, find expensive items that can be swapped for cheaper + more nutritious alternatives
   const categories: IngredientCategory[] = ["protein", "carb", "vegetable", "fruit"];
+
   for (const cat of categories) {
     const catItems = available.filter(i => i.category === cat);
     if (catItems.length < 2) continue;
 
-    const sorted = [...catItems].sort((a, b) => getPrice(a, store) - getPrice(b, store));
+    const sorted = [...catItems].sort((a, b) => a.pricePerServing - b.pricePerServing);
 
     for (let i = 0; i < sorted.length; i++) {
       for (let j = i + 1; j < sorted.length; j++) {
         const cheap = sorted[i];
         const expensive = sorted[j];
-        const savings = getPrice(expensive, store) - getPrice(cheap, store);
+        const savings = expensive.pricePerServing - cheap.pricePerServing;
         const proteinGain = cheap.proteinG - expensive.proteinG;
 
         if (savings >= 0.10 && proteinGain >= 0) {
-          const proteinPerRMCheap = getProteinPerRM(cheap, store);
-          const proteinPerRMExpensive = getProteinPerRM(expensive, store);
+          const proteinPerRMCheap = getProteinPerRM(cheap);
+          const proteinPerRMExpensive = getProteinPerRM(expensive);
           const ratio = proteinPerRMExpensive > 0 ? (proteinPerRMCheap / proteinPerRMExpensive).toFixed(1) : "∞";
 
           swaps.push({
@@ -76,7 +74,6 @@ export function BestValueInsights({ ingredients, store }: BestValueInsightsProps
     }
   }
 
-  // Sort swaps by savings descending, take top 5
   swaps.sort((a, b) => b.savingsRM - a.savingsRM || b.proteinGain - a.proteinGain);
   const topSwaps = swaps.slice(0, 5);
 
@@ -84,12 +81,12 @@ export function BestValueInsights({ ingredients, store }: BestValueInsightsProps
   const categoryStats = categories.map(cat => {
     const items = available.filter(i => i.category === cat);
     if (items.length === 0) return null;
-    const avgPrice = items.reduce((s, i) => s + getPrice(i, store), 0) / items.length;
+    const avgPrice = items.reduce((s, i) => s + i.pricePerServing, 0) / items.length;
     const avgProtein = items.reduce((s, i) => s + i.proteinG, 0) / items.length;
     const avgCalories = items.reduce((s, i) => s + i.calories, 0) / items.length;
     const bestValue = items.reduce((best, cur) =>
-      getProteinPerRM(cur, store) + getCaloriesPerRM(cur, store) >
-      getProteinPerRM(best, store) + getCaloriesPerRM(best, store) ? cur : best
+      getProteinPerRM(cur) + getCaloriesPerRM(cur) >
+      getProteinPerRM(best) + getCaloriesPerRM(best) ? cur : best
     );
     return { cat, count: items.length, avgPrice, avgProtein, avgCalories, bestValue };
   }).filter(Boolean) as { cat: IngredientCategory; count: number; avgPrice: number; avgProtein: number; avgCalories: number; bestValue: Ingredient }[];
@@ -97,23 +94,21 @@ export function BestValueInsights({ ingredients, store }: BestValueInsightsProps
   // ── Headline insight ──
   const proteins = available.filter(i => i.category === "protein" && i.proteinG > 0);
   const bestProtein = proteins.length > 0
-    ? proteins.reduce((best, cur) => getProteinPerRM(cur, store) > getProteinPerRM(best, store) ? cur : best)
+    ? proteins.reduce((best, cur) => getProteinPerRM(cur) > getProteinPerRM(best) ? cur : best)
     : null;
   const worstProtein = proteins.length > 1
-    ? proteins.reduce((worst, cur) => getProteinPerRM(cur, store) < getProteinPerRM(worst, store) ? cur : worst)
+    ? proteins.reduce((worst, cur) => getProteinPerRM(cur) < getProteinPerRM(worst) ? cur : worst)
     : null;
   const ratio = bestProtein && worstProtein
-    ? (getProteinPerRM(bestProtein, store) / getProteinPerRM(worstProtein, store)).toFixed(1)
+    ? (getProteinPerRM(bestProtein) / getProteinPerRM(worstProtein)).toFixed(1)
     : null;
 
-  // ── Weekly savings potential ──
   const weeklySavings = topSwaps.length > 0
     ? (topSwaps.reduce((s, sw) => s + sw.savingsRM, 0) * 5).toFixed(2)
     : null;
 
   return (
     <div className="space-y-4">
-      {/* Headline insight */}
       {bestProtein && worstProtein && ratio && (
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="flex items-start gap-3 pt-5 pb-4">
@@ -126,8 +121,8 @@ export function BestValueInsights({ ingredients, store }: BestValueInsightsProps
               </p>
               <p className="text-sm text-muted-foreground mt-1">
                 {t(
-                  `At current ${store === "custom" ? "your" : store === "default" ? "estimated" : store} prices, ${getName(bestProtein)} gives you ${ratio}× the protein per RM compared to ${getName(worstProtein)}.`,
-                  `Pada harga ${store === "custom" ? "anda" : store === "default" ? "anggaran" : store} semasa, ${getName(bestProtein)} memberi anda ${ratio}× protein setiap RM berbanding ${getName(worstProtein)}.`
+                  `At your current prices, ${getName(bestProtein)} gives you ${ratio}× the protein per RM compared to ${getName(worstProtein)}.`,
+                  `Pada harga semasa anda, ${getName(bestProtein)} memberi anda ${ratio}× protein setiap RM berbanding ${getName(worstProtein)}.`
                 )}
               </p>
               {weeklySavings && (
@@ -143,7 +138,6 @@ export function BestValueInsights({ ingredients, store }: BestValueInsightsProps
         </Card>
       )}
 
-      {/* Smart Swap Suggestions */}
       {topSwaps.length > 0 && (
         <Card className="border-border/60">
           <CardHeader className="pb-2">
@@ -185,7 +179,6 @@ export function BestValueInsights({ ingredients, store }: BestValueInsightsProps
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Protein per RM ranking */}
         <Card className="border-border/60">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -200,7 +193,7 @@ export function BestValueInsights({ ingredients, store }: BestValueInsightsProps
                   <span className="text-xs font-bold text-muted-foreground w-4">#{i + 1}</span>
                   <span className="font-medium">{getName(item)}</span>
                   <Badge variant="outline" className="text-xs px-1.5 py-0">
-                    RM{getPrice(item, store).toFixed(2)}
+                    RM{item.pricePerServing.toFixed(2)}
                   </Badge>
                 </div>
                 <span className="font-semibold text-primary">
@@ -211,7 +204,6 @@ export function BestValueInsights({ ingredients, store }: BestValueInsightsProps
           </CardContent>
         </Card>
 
-        {/* Calories per RM ranking */}
         <Card className="border-border/60">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -226,7 +218,7 @@ export function BestValueInsights({ ingredients, store }: BestValueInsightsProps
                   <span className="text-xs font-bold text-muted-foreground w-4">#{i + 1}</span>
                   <span className="font-medium">{getName(item)}</span>
                   <Badge variant="outline" className="text-xs px-1.5 py-0">
-                    RM{getPrice(item, store).toFixed(2)}
+                    RM{item.pricePerServing.toFixed(2)}
                   </Badge>
                 </div>
                 <span className="font-semibold text-primary">
@@ -238,7 +230,6 @@ export function BestValueInsights({ ingredients, store }: BestValueInsightsProps
         </Card>
       </div>
 
-      {/* Category Nutrient Dashboard */}
       <Card className="border-border/60">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">

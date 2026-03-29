@@ -1,19 +1,16 @@
 import { useState } from "react";
-import { Ingredient, IngredientCategory, StoreId, categoryLabels, stores, getPrice } from "@/data/ingredients";
+import { Ingredient, IngredientCategory, categoryLabels } from "@/data/ingredients";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Edit2, Check, Store } from "lucide-react";
+import { Search, Edit2, Check } from "lucide-react";
 import { useLang } from "@/hooks/useLang";
 
 interface IngredientManagerProps {
   ingredients: Ingredient[];
   onUpdate: (ingredients: Ingredient[]) => void;
-  selectedStore: StoreId;
-  onStoreChange: (store: StoreId) => void;
 }
 
 const CATEGORIES: IngredientCategory[] = ["carb", "protein", "vegetable", "fruit"];
@@ -25,7 +22,7 @@ const categoryBadgeClasses: Record<IngredientCategory, string> = {
   fruit: "bg-primary/15 text-primary border-primary/30",
 };
 
-export function IngredientManager({ ingredients, onUpdate, selectedStore, onStoreChange }: IngredientManagerProps) {
+export function IngredientManager({ ingredients, onUpdate }: IngredientManagerProps) {
   const { lang, t } = useLang();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<IngredientCategory | "all">("all");
@@ -47,8 +44,7 @@ export function IngredientManager({ ingredients, onUpdate, selectedStore, onStor
     if (!isNaN(price) && price > 0) {
       onUpdate(ingredients.map(i => i.id === id ? {
         ...i,
-        storePrices: { ...i.storePrices, [selectedStore]: Math.round(price * 100) / 100 },
-        pricePerServing: selectedStore === "default" ? Math.round(price * 100) / 100 : i.pricePerServing,
+        pricePerServing: Math.round(price * 100) / 100,
       } : i));
     }
     setEditingId(null);
@@ -63,24 +59,9 @@ export function IngredientManager({ ingredients, onUpdate, selectedStore, onStor
     <Card className="border-border/60">
       <CardHeader>
         <CardTitle className="text-lg">{t("Ingredient Database", "Pangkalan Data Bahan")}</CardTitle>
-
-        <div className="flex items-center gap-2">
-          <Store className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">{t("Store:", "Kedai:")}</span>
-          <Select value={selectedStore} onValueChange={(v) => onStoreChange(v as StoreId)}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {stores.map(s => (
-                <SelectItem key={s.id} value={s.id}>
-                  {lang === "en" ? s.name : s.nameMY}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
+        <p className="text-sm text-muted-foreground">
+          {t("Edit prices to match your local market rates.", "Sunting harga mengikut kadar pasaran tempatan anda.")}
+        </p>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -112,57 +93,54 @@ export function IngredientManager({ ingredients, onUpdate, selectedStore, onStor
       </CardHeader>
       <CardContent>
         <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-          {filtered.map(ingredient => {
-            const price = getPrice(ingredient, selectedStore);
-            return (
-              <div
-                key={ingredient.id}
-                className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                  ingredient.isAvailable ? "bg-card" : "bg-muted/50 opacity-60"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={ingredient.isAvailable}
-                    onCheckedChange={() => handleToggle(ingredient.id)}
-                  />
-                  <div>
-                    <p className="font-medium text-sm">{getName(ingredient)}</p>
-                    <p className="text-xs text-muted-foreground">{getSubName(ingredient)} · {ingredient.servingSize}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className={categoryBadgeClasses[ingredient.category]}>
-                    {getCatLabel(ingredient.category)}
-                  </Badge>
-                  {editingId === ingredient.id ? (
-                    <div className="flex items-center gap-1">
-                      <Input
-                        value={editPrice}
-                        onChange={e => setEditPrice(e.target.value)}
-                        className="w-20 h-8 text-sm"
-                        type="number"
-                        step="0.05"
-                        autoFocus
-                        onKeyDown={e => e.key === "Enter" && handlePriceEdit(ingredient.id)}
-                      />
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handlePriceEdit(ingredient.id)}>
-                        <Check className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <button
-                      className="flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
-                      onClick={() => { setEditingId(ingredient.id); setEditPrice(price.toFixed(2)); }}
-                    >
-                      RM{price.toFixed(2)}
-                      <Edit2 className="h-3 w-3" />
-                    </button>
-                  )}
+          {filtered.map(ingredient => (
+            <div
+              key={ingredient.id}
+              className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                ingredient.isAvailable ? "bg-card" : "bg-muted/50 opacity-60"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={ingredient.isAvailable}
+                  onCheckedChange={() => handleToggle(ingredient.id)}
+                />
+                <div>
+                  <p className="font-medium text-sm">{getName(ingredient)}</p>
+                  <p className="text-xs text-muted-foreground">{getSubName(ingredient)} · {ingredient.servingSize}</p>
                 </div>
               </div>
-            );
-          })}
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className={categoryBadgeClasses[ingredient.category]}>
+                  {getCatLabel(ingredient.category)}
+                </Badge>
+                {editingId === ingredient.id ? (
+                  <div className="flex items-center gap-1">
+                    <Input
+                      value={editPrice}
+                      onChange={e => setEditPrice(e.target.value)}
+                      className="w-20 h-8 text-sm"
+                      type="number"
+                      step="0.05"
+                      autoFocus
+                      onKeyDown={e => e.key === "Enter" && handlePriceEdit(ingredient.id)}
+                    />
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handlePriceEdit(ingredient.id)}>
+                      <Check className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    className="flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+                    onClick={() => { setEditingId(ingredient.id); setEditPrice(ingredient.pricePerServing.toFixed(2)); }}
+                  >
+                    RM{ingredient.pricePerServing.toFixed(2)}
+                    <Edit2 className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
