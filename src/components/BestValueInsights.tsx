@@ -91,19 +91,29 @@ export function BestValueInsights({ ingredients, meals = [] }: BestValueInsights
   swaps.sort((a, b) => b.savingsRM - a.savingsRM || b.proteinGain - a.proteinGain);
   const topSwaps = swaps.slice(0, 5);
 
-  // ── Category spending analysis ──
+  // ── Category spending analysis (from actual meal plan when available) ──
   const categoryStats = categories.map(cat => {
     const items = available.filter(i => i.category === cat);
     if (items.length === 0) return null;
-    const avgPrice = items.reduce((s, i) => s + i.pricePerServing, 0) / items.length;
-    const avgProtein = items.reduce((s, i) => s + i.proteinG, 0) / items.length;
-    const avgCalories = items.reduce((s, i) => s + i.calories, 0) / items.length;
+
+    const slot = cat === "carb" ? "carb" : cat === "protein" ? "protein" : cat === "vegetable" ? "vegetable" : "fruit";
+    const planItems = meals.map(m => m[slot as keyof MealPlan] as Ingredient);
+    const hasPlan = meals.length > 0;
+
+    // Use actual plan data if available, otherwise fall back to all-ingredients average
+    const sourceItems = hasPlan ? planItems : items;
+    const avgPrice = sourceItems.reduce((s, i) => s + i.pricePerServing, 0) / sourceItems.length;
+    const avgProtein = sourceItems.reduce((s, i) => s + i.proteinG, 0) / sourceItems.length;
+    const avgCalories = sourceItems.reduce((s, i) => s + i.calories, 0) / sourceItems.length;
+    const totalCost = hasPlan ? planItems.reduce((s, i) => s + i.pricePerServing, 0) : null;
+    const totalCalories = hasPlan ? planItems.reduce((s, i) => s + i.calories, 0) : null;
+
     const bestValue = items.reduce((best, cur) =>
       getProteinPerRM(cur) + getCaloriesPerRM(cur) >
       getProteinPerRM(best) + getCaloriesPerRM(best) ? cur : best
     );
-    return { cat, count: items.length, avgPrice, avgProtein, avgCalories, bestValue };
-  }).filter(Boolean) as { cat: IngredientCategory; count: number; avgPrice: number; avgProtein: number; avgCalories: number; bestValue: Ingredient }[];
+    return { cat, count: items.length, avgPrice, avgProtein, avgCalories, totalCost, totalCalories, bestValue, hasPlan };
+  }).filter(Boolean) as { cat: IngredientCategory; count: number; avgPrice: number; avgProtein: number; avgCalories: number; totalCost: number | null; totalCalories: number | null; bestValue: Ingredient; hasPlan: boolean }[];
 
   // ── Headline insight ──
   const proteins = available.filter(i => i.category === "protein" && i.proteinG > 0);
