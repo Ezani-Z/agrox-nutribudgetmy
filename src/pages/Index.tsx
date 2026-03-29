@@ -50,6 +50,12 @@ const Index = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [activeMealId, setActiveMealId] = useState<string | null>(null);
   const [selectedStore, setSelectedStore] = useState<StoreId>("default");
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate initial load with tips
+  if (typeof window !== "undefined" && isLoading) {
+    setTimeout(() => setIsLoading(false), 2200);
+  }
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
