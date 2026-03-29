@@ -16,7 +16,7 @@ export function BudgetSummary({ meals }: BudgetSummaryProps) {
   const allWithinBudget = meals.every(m => m.totalCost >= BUDGET_RANGE.min && m.totalCost <= BUDGET_RANGE.max);
 
   const chartData = meals.map(m => ({
-    day: `${m.day.slice(0, 3)} / ${m.dayMY.slice(0, 3)}`,
+    day: `${m.day.slice(0, 3)}${m.dayMY ? ` / ${m.dayMY.slice(0, 3)}` : ""}`,
     cost: m.totalCost,
   }));
 
