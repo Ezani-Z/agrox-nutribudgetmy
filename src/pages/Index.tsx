@@ -42,7 +42,27 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleUpdateIngredients = useCallback((updated: Ingredient[]) => {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setMeals(prev => {
+      const oldIndex = prev.findIndex(m => m.id === active.id);
+      const newIndex = prev.findIndex(m => m.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      const updated = [...prev];
+      const dayA = updated[oldIndex].day;
+      const dayB = updated[newIndex].day;
+      updated[oldIndex] = { ...updated[oldIndex], day: dayB, id: `meal-${dayB}` };
+      updated[newIndex] = { ...updated[newIndex], day: dayA, id: `meal-${dayA}` };
+      [updated[oldIndex], updated[newIndex]] = [updated[newIndex], updated[oldIndex]];
+      return updated;
+    });
+    setLockedMealIds(new Set());
+  }, []);
+
+
     setIngredients(updated);
     localStorage.setItem("nutribudget-ingredients", JSON.stringify(updated));
   }, []);
