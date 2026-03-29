@@ -6,7 +6,8 @@ import { BudgetSummary } from "@/components/BudgetSummary";
 import { IngredientManager } from "@/components/IngredientManager";
 import { defaultIngredients, Ingredient } from "@/data/ingredients";
 import { generateWeeklyMealPlan, MealPlan } from "@/utils/mealGenerator";
-import { Sparkles, UtensilsCrossed, Database, BarChart3 } from "lucide-react";
+import { Sparkles, UtensilsCrossed, Database, BarChart3, Download } from "lucide-react";
+import { exportMealPlanPdf } from "@/utils/exportPdf";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
