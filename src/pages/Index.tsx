@@ -8,6 +8,18 @@ import { defaultIngredients, Ingredient } from "@/data/ingredients";
 import { generateWeeklyMealPlan, MealPlan } from "@/utils/mealGenerator";
 import { Sparkles, UtensilsCrossed, Database, BarChart3, Download } from "lucide-react";
 import { exportMealPlanPdf } from "@/utils/exportPdf";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -29,6 +41,26 @@ const Index = () => {
   const [lockedMealIds, setLockedMealIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setMeals(prev => {
+      const oldIndex = prev.findIndex(m => m.id === active.id);
+      const newIndex = prev.findIndex(m => m.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      const updated = [...prev];
+      const dayA = updated[oldIndex].day;
+      const dayB = updated[newIndex].day;
+      updated[oldIndex] = { ...updated[oldIndex], day: dayB, id: `meal-${dayB}` };
+      updated[newIndex] = { ...updated[newIndex], day: dayA, id: `meal-${dayA}` };
+      [updated[oldIndex], updated[newIndex]] = [updated[newIndex], updated[oldIndex]];
+      return updated;
+    });
+    setLockedMealIds(new Set());
+  }, []);
 
   const handleUpdateIngredients = useCallback((updated: Ingredient[]) => {
     setIngredients(updated);
@@ -137,17 +169,21 @@ const Index = () => {
                       </p>
                     )}
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {meals.map((meal, i) => (
-                      <MealCard
-                        key={meal.id}
-                        meal={meal}
-                        index={i}
-                        isLocked={lockedMealIds.has(meal.id)}
-                        onToggleLock={() => handleToggleLock(meal.id)}
-                      />
-                    ))}
-                  </div>
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={meals.map(m => m.id)} strategy={rectSortingStrategy}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {meals.map((meal, i) => (
+                          <MealCard
+                            key={meal.id}
+                            meal={meal}
+                            index={i}
+                            isLocked={lockedMealIds.has(meal.id)}
+                            onToggleLock={() => handleToggleLock(meal.id)}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 </div>
               </>
             )}
