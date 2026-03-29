@@ -42,54 +42,87 @@ export function BestValueInsights({ ingredients, meals = [] }: BestValueInsights
     .sort((a, b) => b.cprm - a.cprm)
     .slice(0, 5);
 
-  // ── Smart Swap Suggestions ──
+  // ── Smart Swap Suggestions (only for ingredients in the current plan) ──
   const swaps: SwapSuggestion[] = [];
   const categories: IngredientCategory[] = ["protein", "carb", "vegetable", "fruit"];
 
-  for (const cat of categories) {
-    const catItems = available.filter(i => i.category === cat);
-    if (catItems.length < 2) continue;
+  if (meals.length > 0) {
+    for (const cat of categories) {
+      const catItems = available.filter(i => i.category === cat);
+      if (catItems.length < 2) continue;
 
-    const sorted = [...catItems].sort((a, b) => a.pricePerServing - b.pricePerServing);
+      // Get unique ingredients used in the plan for this category
+      const slot = cat === "carb" ? "carb" : cat === "protein" ? "protein" : cat === "vegetable" ? "vegetable" : "fruit";
+      const planIngredientIds = new Set(meals.map(m => (m[slot as keyof MealPlan] as Ingredient).id));
+      const planIngredients = catItems.filter(i => planIngredientIds.has(i.id));
+      const cheaperAlternatives = catItems.filter(i => !planIngredientIds.has(i.id));
 
-    for (let i = 0; i < sorted.length; i++) {
-      for (let j = i + 1; j < sorted.length; j++) {
-        const cheap = sorted[i];
-        const expensive = sorted[j];
-        const savings = expensive.pricePerServing - cheap.pricePerServing;
-        const proteinGain = cheap.proteinG - expensive.proteinG;
+      const catSwaps: SwapSuggestion[] = [];
 
-        if (savings >= 0.10 && proteinGain >= 0) {
-          const proteinPerRMCheap = getProteinPerRM(cheap);
-          const proteinPerRMExpensive = getProteinPerRM(expensive);
-          const ratio = proteinPerRMExpensive > 0 ? (proteinPerRMCheap / proteinPerRMExpensive).toFixed(1) : "∞";
+      for (const expensive of planIngredients) {
+        for (const cheap of [...cheaperAlternatives, ...planIngredients.filter(c => c.id !== expensive.id)]) {
+          const savings = expensive.pricePerServing - cheap.pricePerServing;
+          const proteinGain = cheap.proteinG - expensive.proteinG;
 
-          // Find which meal days use the expensive ingredient
-          const affectedMeals = meals.filter(m => {
-            const slot = cat === "carb" ? m.carb : cat === "protein" ? m.protein : cat === "vegetable" ? m.vegetable : m.fruit;
-            return slot.id === expensive.id;
-          });
-          const days = affectedMeals.map(m => m.day);
-          const daysMY = affectedMeals.map(m => m.dayMY);
+          if (savings >= 0.05 && proteinGain >= 0) {
+            const proteinPerRMCheap = getProteinPerRM(cheap);
+            const proteinPerRMExpensive = getProteinPerRM(expensive);
+            const ratio = proteinPerRMExpensive > 0 ? (proteinPerRMCheap / proteinPerRMExpensive).toFixed(1) : "∞";
 
-          swaps.push({
-            from: expensive,
-            to: cheap,
-            savingsRM: savings,
-            proteinGain,
-            calorieChange: cheap.calories - expensive.calories,
-            days,
-            daysMY,
-            reason: `Swap ${getName(expensive)} → ${getName(cheap)}: Save RM${savings.toFixed(2)}/serving${proteinGain > 0 ? ` and gain ${proteinGain}g protein` : ""}. ${ratio}× better protein/RM.`,
-            reasonMY: `Tukar ${getName(expensive)} → ${getName(cheap)}: Jimat RM${savings.toFixed(2)}/hidangan${proteinGain > 0 ? ` dan dapat ${proteinGain}g lebih protein` : ""}. ${ratio}× lebih baik protein/RM.`,
-          });
+            const affectedMeals = meals.filter(m => (m[slot as keyof MealPlan] as Ingredient).id === expensive.id);
+            const days = affectedMeals.map(m => m.day);
+            const daysMY = affectedMeals.map(m => m.dayMY);
+
+            catSwaps.push({
+              from: expensive,
+              to: cheap,
+              savingsRM: savings,
+              proteinGain,
+              calorieChange: cheap.calories - expensive.calories,
+              days,
+              daysMY,
+              reason: `Swap ${getName(expensive)} → ${getName(cheap)}: Save RM${savings.toFixed(2)}/serving${proteinGain > 0 ? ` and gain ${proteinGain}g protein` : ""}. ${ratio}× better protein/RM.`,
+              reasonMY: `Tukar ${getName(expensive)} → ${getName(cheap)}: Jimat RM${savings.toFixed(2)}/hidangan${proteinGain > 0 ? ` dan dapat ${proteinGain}g lebih protein` : ""}. ${ratio}× lebih baik protein/RM.`,
+            });
+          }
         }
+      }
+
+      // Sort by savings, take up to 2 per category
+      catSwaps.sort((a, b) => b.savingsRM - a.savingsRM || b.proteinGain - a.proteinGain);
+      swaps.push(...catSwaps.slice(0, 2));
+    }
+
+    // If any category has 0 swaps, try with relaxed criteria (just cheaper, ignore protein)
+    for (const cat of categories) {
+      if (swaps.some(s => s.from.category === cat)) continue;
+      const catItems = available.filter(i => i.category === cat);
+      const slot = cat === "carb" ? "carb" : cat === "protein" ? "protein" : cat === "vegetable" ? "vegetable" : "fruit";
+      const planIngredients = [...new Set(meals.map(m => (m[slot as keyof MealPlan] as Ingredient).id))].map(id => catItems.find(i => i.id === id)!).filter(Boolean);
+      const others = catItems.filter(i => !planIngredients.some(p => p.id === i.id));
+
+      for (const expensive of planIngredients) {
+        for (const cheap of others) {
+          if (cheap.pricePerServing < expensive.pricePerServing) {
+            const savings = expensive.pricePerServing - cheap.pricePerServing;
+            const affectedMeals = meals.filter(m => (m[slot as keyof MealPlan] as Ingredient).id === expensive.id);
+            swaps.push({
+              from: expensive, to: cheap, savingsRM: savings,
+              proteinGain: cheap.proteinG - expensive.proteinG,
+              calorieChange: cheap.calories - expensive.calories,
+              days: affectedMeals.map(m => m.day), daysMY: affectedMeals.map(m => m.dayMY),
+              reason: `Swap ${getName(expensive)} → ${getName(cheap)}: Save RM${savings.toFixed(2)}/serving.`,
+              reasonMY: `Tukar ${getName(expensive)} → ${getName(cheap)}: Jimat RM${savings.toFixed(2)}/hidangan.`,
+            });
+            break; // just need 1 for this category
+          }
+        }
+        if (swaps.some(s => s.from.category === cat)) break;
       }
     }
   }
 
-  swaps.sort((a, b) => b.savingsRM - a.savingsRM || b.proteinGain - a.proteinGain);
-  const topSwaps = swaps.slice(0, 5);
+  const topSwaps = swaps;
 
   // ── Category spending analysis (from actual meal plan when available) ──
   const categoryStats = categories.map(cat => {
