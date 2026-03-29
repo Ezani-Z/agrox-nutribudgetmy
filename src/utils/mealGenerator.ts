@@ -51,8 +51,7 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[]): MealPlan[] {
   const usedCombos = new Set<string>();
 
   for (const day of DAYS) {
-    let bestMeal: MealPlan | null = null;
-    let bestScore = -1;
+    const candidates: MealPlan[] = [];
 
     const shuffledCarbs = shuffleArray(carbs);
     const shuffledProteins = shuffleArray(proteins);
@@ -70,37 +69,38 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[]): MealPlan[] {
 
             if (totalCost < BUDGET_MIN || totalCost > BUDGET_MAX) continue;
 
-            // Calculate ratios based on price contribution as proxy for portion
             const carbRatio = carb.pricePerServing / totalCost;
             const proteinRatio = protein.pricePerServing / totalCost;
             const vegFruitRatio = (veg.pricePerServing + fruit.pricePerServing) / totalCost;
 
             const score = calculateNutritionScore(carbRatio, proteinRatio, vegFruitRatio);
 
-            if (score > bestScore) {
-              bestScore = score;
-              bestMeal = {
-                id: `meal-${day}`,
-                day,
-                carb,
-                protein,
-                vegetable: veg,
-                fruit,
-                totalCost: Math.round(totalCost * 100) / 100,
-                nutritionScore: score,
-                carbRatio: Math.round(carbRatio * 100),
-                proteinRatio: Math.round(proteinRatio * 100),
-                vegFruitRatio: Math.round(vegFruitRatio * 100),
-              };
-            }
+            candidates.push({
+              id: `meal-${day}`,
+              day,
+              carb,
+              protein,
+              vegetable: veg,
+              fruit,
+              totalCost: Math.round(totalCost * 100) / 100,
+              nutritionScore: score,
+              carbRatio: Math.round(carbRatio * 100),
+              proteinRatio: Math.round(proteinRatio * 100),
+              vegFruitRatio: Math.round(vegFruitRatio * 100),
+            });
           }
         }
       }
     }
 
-    if (bestMeal) {
-      usedCombos.add(`${bestMeal.carb.id}-${bestMeal.protein.id}-${bestMeal.vegetable.id}-${bestMeal.fruit.id}`);
-      mealPlans.push(bestMeal);
+    if (candidates.length > 0) {
+      // Pick randomly from the top candidates (within 15 points of best score)
+      candidates.sort((a, b) => b.nutritionScore - a.nutritionScore);
+      const bestScore = candidates[0].nutritionScore;
+      const topCandidates = candidates.filter(c => c.nutritionScore >= bestScore - 15);
+      const chosen = topCandidates[Math.floor(Math.random() * topCandidates.length)];
+      usedCombos.add(`${chosen.carb.id}-${chosen.protein.id}-${chosen.vegetable.id}-${chosen.fruit.id}`);
+      mealPlans.push(chosen);
     }
   }
 
