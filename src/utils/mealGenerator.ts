@@ -81,7 +81,7 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[]): MealPlan[] {
             if (score > bestScore) {
               bestScore = score;
               bestMeal = {
-                id: `meal-${day}`,
+                id: `meal-${batchId}-${day}`,
                 day,
                 carb,
                 protein,
