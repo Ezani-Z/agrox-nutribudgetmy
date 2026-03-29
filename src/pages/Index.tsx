@@ -38,6 +38,11 @@ const Index = () => {
     const plan = generateWeeklyMealPlan(ingredients);
     setMeals(plan);
     setActiveTab("dashboard");
+    if (plan.length > 0) {
+      toast({ title: "Meal Plan Generated", description: `${plan.length}-day meal plan created within budget.` });
+    } else {
+      toast({ title: "No Valid Combinations", description: "Try adjusting ingredient prices or availability.", variant: "destructive" });
+    }
   }, [ingredients]);
 
   return (
