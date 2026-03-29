@@ -52,10 +52,10 @@ const Index = () => {
   const [selectedStore, setSelectedStore] = useState<StoreId>("default");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Simulate initial load with tips
-  if (typeof window !== "undefined" && isLoading) {
-    setTimeout(() => setIsLoading(false), 2200);
-  }
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 2200);
+    return () => clearTimeout(timer);
+  }, []);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
