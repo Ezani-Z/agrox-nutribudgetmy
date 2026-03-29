@@ -282,22 +282,37 @@ export function BestValueInsights({ ingredients, meals = [] }: BestValueInsights
               <div key={stat.cat} className="p-3 rounded-lg border border-border/40 bg-muted/30 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-sm">{getCatLabel(stat.cat)}</span>
-                  <span className="text-xs text-muted-foreground">{stat.count} {t("items", "item")}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {stat.hasPlan
+                      ? t(`${meals.length}-day plan`, `Pelan ${meals.length} hari`)
+                      : `${stat.count} ${t("items", "item")}`}
+                  </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
                     <p className="text-lg font-bold text-primary">RM{stat.avgPrice.toFixed(2)}</p>
-                    <p className="text-[10px] text-muted-foreground">{t("Avg Price", "Harga Purata")}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {stat.hasPlan ? t("Avg/Day", "Purata/Hari") : t("Avg Price", "Harga Purata")}
+                    </p>
                   </div>
                   <div>
                     <p className="text-lg font-bold">{stat.avgProtein.toFixed(0)}g</p>
-                    <p className="text-[10px] text-muted-foreground">{t("Avg Protein", "Protein Purata")}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {stat.hasPlan ? t("Avg/Day", "Purata/Hari") : t("Avg Protein", "Protein Purata")}
+                    </p>
                   </div>
                   <div>
                     <p className="text-lg font-bold">{stat.avgCalories.toFixed(0)}</p>
-                    <p className="text-[10px] text-muted-foreground">{t("Avg kcal", "Purata kcal")}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {stat.hasPlan ? t("kcal/Day", "kcal/Hari") : t("Avg kcal", "Purata kcal")}
+                    </p>
                   </div>
                 </div>
+                {stat.hasPlan && stat.totalCalories !== null && stat.totalCost !== null && (
+                  <div className="text-xs text-muted-foreground border-t border-border/30 pt-1.5 mt-1">
+                    {t("Weekly total:", "Jumlah mingguan:")} <span className="font-medium text-foreground">{stat.totalCalories} kcal</span> · <span className="font-medium text-foreground">RM{stat.totalCost.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="text-xs text-muted-foreground">
                   ⭐ {t("Best value:", "Nilai terbaik:")} <span className="font-medium text-foreground">{getName(stat.bestValue)}</span>
                 </div>
