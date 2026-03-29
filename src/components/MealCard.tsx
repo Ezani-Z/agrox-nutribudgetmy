@@ -6,6 +6,7 @@ import { NutritionPieChart } from "./NutritionPieChart";
 import { UtensilsCrossed, Leaf, Apple, Wheat, Lock, Unlock, GripVertical } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useLang } from "@/hooks/useLang";
 
 interface MealCardProps {
   meal: MealPlan;
@@ -15,12 +16,13 @@ interface MealCardProps {
 }
 
 const statusConfig = {
-  success: { label: "Within Budget", labelMY: "Dalam Bajet", className: "bg-accent text-accent-foreground" },
-  warning: { label: "Near Limit", labelMY: "Hampir Had", className: "bg-secondary/20 text-secondary" },
-  danger: { label: "Over Budget", labelMY: "Melebihi Bajet", className: "bg-destructive/15 text-destructive" },
+  success: { en: "Within Budget", my: "Dalam Bajet", className: "bg-accent text-accent-foreground" },
+  warning: { en: "Near Limit", my: "Hampir Had", className: "bg-secondary/20 text-secondary" },
+  danger: { en: "Over Budget", my: "Melebihi Bajet", className: "bg-destructive/15 text-destructive" },
 };
 
 export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCardProps) {
+  const { lang, t } = useLang();
   const status = getBudgetStatus(meal.totalCost);
   const config = statusConfig[status];
 
@@ -39,6 +41,9 @@ export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCa
     animationDelay: `${index * 80}ms`,
   };
 
+  const dayLabel = lang === "en" ? meal.day : (meal.dayMY || meal.day);
+  const getName = (ing: { name: string; nameMY: string }) => lang === "en" ? ing.name : ing.nameMY;
+
   return (
     <Card
       ref={setNodeRef}
@@ -55,26 +60,23 @@ export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCa
             >
               <GripVertical className="h-4 w-4" />
             </button>
-            <CardTitle className="text-lg">
-              {meal.day}
-              <span className="text-sm font-normal text-muted-foreground ml-1">({meal.dayMY})</span>
-            </CardTitle>
+            <CardTitle className="text-lg">{dayLabel}</CardTitle>
           </div>
           <div className="flex items-center gap-2">
             {isLocked && (
               <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs">
-                Locked / Dikunci
+                {t("Locked", "Dikunci")}
               </Badge>
             )}
             <Badge variant="outline" className={config.className}>
-              {config.label}
+              {lang === "en" ? config.en : config.my}
             </Badge>
             <Button
               variant="ghost"
               size="icon"
               className="h-7 w-7"
               onClick={onToggleLock}
-              title={isLocked ? "Unlock meal / Buka kunci" : "Lock meal / Kunci hidangan"}
+              title={t("Lock/Unlock meal", "Kunci/Buka kunci hidangan")}
             >
               {isLocked ? <Lock className="h-4 w-4 text-primary" /> : <Unlock className="h-4 w-4 text-muted-foreground" />}
             </Button>
@@ -82,7 +84,7 @@ export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCa
         </div>
         <div className="flex items-center gap-2">
           <span className="text-2xl font-bold text-primary">RM{meal.totalCost.toFixed(2)}</span>
-          <span className="text-sm text-muted-foreground">/ student · pelajar</span>
+          <span className="text-sm text-muted-foreground">/ {t("student", "pelajar")}</span>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -90,33 +92,29 @@ export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCa
           <div className="flex items-center gap-2 rounded-md bg-muted p-2">
             <Wheat className="h-4 w-4 text-secondary" />
             <div>
-              <p className="text-xs text-muted-foreground">Carb / Karbohidrat</p>
-              <p className="text-sm font-medium">{meal.carb.nameMY}</p>
-              <p className="text-xs text-muted-foreground">{meal.carb.name}</p>
+              <p className="text-xs text-muted-foreground">{t("Carb", "Karbohidrat")}</p>
+              <p className="text-sm font-medium">{getName(meal.carb)}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-md bg-muted p-2">
             <UtensilsCrossed className="h-4 w-4 text-destructive" />
             <div>
-              <p className="text-xs text-muted-foreground">Protein / Protein</p>
-              <p className="text-sm font-medium">{meal.protein.nameMY}</p>
-              <p className="text-xs text-muted-foreground">{meal.protein.name}</p>
+              <p className="text-xs text-muted-foreground">{t("Protein", "Protein")}</p>
+              <p className="text-sm font-medium">{getName(meal.protein)}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-md bg-muted p-2">
             <Leaf className="h-4 w-4 text-primary" />
             <div>
-              <p className="text-xs text-muted-foreground">Vegetable / Sayuran</p>
-              <p className="text-sm font-medium">{meal.vegetable.nameMY}</p>
-              <p className="text-xs text-muted-foreground">{meal.vegetable.name}</p>
+              <p className="text-xs text-muted-foreground">{t("Vegetable", "Sayuran")}</p>
+              <p className="text-sm font-medium">{getName(meal.vegetable)}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-md bg-muted p-2">
             <Apple className="h-4 w-4 text-primary" />
             <div>
-              <p className="text-xs text-muted-foreground">Fruit / Buah</p>
-              <p className="text-sm font-medium">{meal.fruit.nameMY}</p>
-              <p className="text-xs text-muted-foreground">{meal.fruit.name}</p>
+              <p className="text-xs text-muted-foreground">{t("Fruit", "Buah")}</p>
+              <p className="text-sm font-medium">{getName(meal.fruit)}</p>
             </div>
           </div>
         </div>
@@ -127,7 +125,7 @@ export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCa
         </div>
 
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Nutrition Score / Skor Pemakanan</span>
+          <span className="text-muted-foreground">{t("Nutrition Score", "Skor Pemakanan")}</span>
           <div className="flex items-center gap-2">
             <div className="h-2 w-20 rounded-full bg-muted overflow-hidden">
               <div
@@ -144,29 +142,31 @@ export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCa
 }
 
 export function MealCardOverlay({ meal }: { meal: MealPlan }) {
+  const { lang } = useLang();
   const status = getBudgetStatus(meal.totalCost);
   const config = statusConfig[status];
+  const dayLabel = lang === "en" ? meal.day : (meal.dayMY || meal.day);
+  const getName = (ing: { name: string; nameMY: string }) => lang === "en" ? ing.name : ing.nameMY;
 
   return (
     <Card className="overflow-hidden border-primary/50 shadow-2xl ring-2 ring-primary/30 rotate-2 scale-105 w-full max-w-sm">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{meal.day} <span className="text-sm font-normal text-muted-foreground">({meal.dayMY})</span></CardTitle>
+          <CardTitle className="text-lg">{dayLabel}</CardTitle>
           <Badge variant="outline" className={config.className}>
-            {config.label}
+            {lang === "en" ? config.en : config.my}
           </Badge>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-2xl font-bold text-primary">RM{meal.totalCost.toFixed(2)}</span>
-          <span className="text-sm text-muted-foreground">/ student · pelajar</span>
         </div>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-2 text-sm">
-          <span className="text-muted-foreground">🌾 {meal.carb.nameMY}</span>
-          <span className="text-muted-foreground">🍗 {meal.protein.nameMY}</span>
-          <span className="text-muted-foreground">🥬 {meal.vegetable.nameMY}</span>
-          <span className="text-muted-foreground">🍎 {meal.fruit.nameMY}</span>
+          <span className="text-muted-foreground">🌾 {getName(meal.carb)}</span>
+          <span className="text-muted-foreground">🍗 {getName(meal.protein)}</span>
+          <span className="text-muted-foreground">🥬 {getName(meal.vegetable)}</span>
+          <span className="text-muted-foreground">🍎 {getName(meal.fruit)}</span>
         </div>
       </CardContent>
     </Card>

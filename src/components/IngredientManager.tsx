@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Edit2, Check, Store } from "lucide-react";
+import { useLang } from "@/hooks/useLang";
 
 interface IngredientManagerProps {
   ingredients: Ingredient[];
@@ -25,6 +26,7 @@ const categoryBadgeClasses: Record<IngredientCategory, string> = {
 };
 
 export function IngredientManager({ ingredients, onUpdate, selectedStore, onStoreChange }: IngredientManagerProps) {
+  const { lang, t } = useLang();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<IngredientCategory | "all">("all");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -53,18 +55,18 @@ export function IngredientManager({ ingredients, onUpdate, selectedStore, onStor
     setEditPrice("");
   };
 
+  const getName = (ing: Ingredient) => lang === "en" ? ing.name : ing.nameMY;
+  const getSubName = (ing: Ingredient) => lang === "en" ? ing.nameMY : ing.name;
+  const getCatLabel = (cat: IngredientCategory) => lang === "en" ? categoryLabels[cat].en : categoryLabels[cat].my;
+
   return (
     <Card className="border-border/60">
       <CardHeader>
-        <CardTitle className="text-lg">
-          Ingredient Database
-          <span className="text-sm font-normal text-muted-foreground ml-2">/ Pangkalan Data Bahan</span>
-        </CardTitle>
+        <CardTitle className="text-lg">{t("Ingredient Database", "Pangkalan Data Bahan")}</CardTitle>
 
-        {/* Store Selector */}
         <div className="flex items-center gap-2">
           <Store className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Store / Kedai:</span>
+          <span className="text-sm text-muted-foreground">{t("Store:", "Kedai:")}</span>
           <Select value={selectedStore} onValueChange={(v) => onStoreChange(v as StoreId)}>
             <SelectTrigger className="w-48">
               <SelectValue />
@@ -72,7 +74,7 @@ export function IngredientManager({ ingredients, onUpdate, selectedStore, onStor
             <SelectContent>
               {stores.map(s => (
                 <SelectItem key={s.id} value={s.id}>
-                  {s.name} {s.nameMY !== s.name ? `/ ${s.nameMY}` : ""}
+                  {lang === "en" ? s.name : s.nameMY}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -82,7 +84,7 @@ export function IngredientManager({ ingredients, onUpdate, selectedStore, onStor
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search ingredients / Cari bahan..."
+            placeholder={t("Search ingredients...", "Cari bahan...")}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="pl-9"
@@ -94,7 +96,7 @@ export function IngredientManager({ ingredients, onUpdate, selectedStore, onStor
             className="cursor-pointer"
             onClick={() => setActiveCategory("all")}
           >
-            All / Semua
+            {t("All", "Semua")}
           </Badge>
           {CATEGORIES.map(cat => (
             <Badge
@@ -103,7 +105,7 @@ export function IngredientManager({ ingredients, onUpdate, selectedStore, onStor
               className={`cursor-pointer ${activeCategory === cat ? categoryBadgeClasses[cat] : ""}`}
               onClick={() => setActiveCategory(cat)}
             >
-              {categoryLabels[cat].en} / {categoryLabels[cat].my}
+              {getCatLabel(cat)}
             </Badge>
           ))}
         </div>
@@ -125,13 +127,13 @@ export function IngredientManager({ ingredients, onUpdate, selectedStore, onStor
                     onCheckedChange={() => handleToggle(ingredient.id)}
                   />
                   <div>
-                    <p className="font-medium text-sm">{ingredient.nameMY}</p>
-                    <p className="text-xs text-muted-foreground">{ingredient.name} · {ingredient.servingSize}</p>
+                    <p className="font-medium text-sm">{getName(ingredient)}</p>
+                    <p className="text-xs text-muted-foreground">{getSubName(ingredient)} · {ingredient.servingSize}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className={categoryBadgeClasses[ingredient.category]}>
-                    {categoryLabels[ingredient.category].en}
+                    {getCatLabel(ingredient.category)}
                   </Badge>
                   {editingId === ingredient.id ? (
                     <div className="flex items-center gap-1">
