@@ -194,7 +194,7 @@ Suku-Suku Separuh Score = 100 - (
 )
 ```
 
-A score of 100 represents perfect Suku-Suku Separuh compliance. The algorithm targets combinations scoring above 85 before applying randomisation for variety across the week.
+A score of 100 represents perfect Suku-Suku Separuh compliance. The algorithm targets combinations scoring above 70 before applying randomisation for variety across the week.
 
 ### 4.3 Malaysian Ingredient Database
 
