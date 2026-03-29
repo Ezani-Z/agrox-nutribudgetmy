@@ -45,20 +45,6 @@ NutriBudget MY uses a constraint-satisfaction algorithm to automatically generat
 4. Generate your weekly meal plan
 5. Export/print for kitchen use
 
-## Project Structure
-
-```
-PutraHack_2026/
-├── PRD.md                 # Product Requirements Document
-├── README.md             # This file
-├── ai-disclosure.md      # AI Tools Disclosure
-├── src/                  # Source code (Lovable/React)
-│   ├── components/       # React components
-│   ├── data/            # Ingredient database
-│   └── utils/           # Algorithm logic
-└── docs/                # Additional documentation
-```
-
 ## PutraHack 2026 Alignment
 
 | Criteria | Our Approach |
