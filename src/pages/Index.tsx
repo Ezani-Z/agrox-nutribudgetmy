@@ -39,12 +39,12 @@ const Index = () => {
             </div>
             <div>
               <h1 className="text-lg font-bold leading-none">NutriBudget MY</h1>
-              <p className="text-xs text-muted-foreground">Perancang Hidangan Kantin Sekolah</p>
+              <p className="text-xs text-muted-foreground">School Canteen Meal Planner</p>
             </div>
           </div>
           <Button onClick={handleGenerate} className="gap-2">
             <Sparkles className="h-4 w-4" />
-            Jana Pelan Hidangan
+            Generate Meal Plan
           </Button>
         </div>
       </header>
@@ -54,10 +54,10 @@ const Index = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="dashboard" className="gap-2">
-              <BarChart3 className="h-4 w-4" /> Papan Pemuka
+              <BarChart3 className="h-4 w-4" /> Dashboard
             </TabsTrigger>
             <TabsTrigger value="ingredients" className="gap-2">
-              <Database className="h-4 w-4" /> Bahan-bahan
+              <Database className="h-4 w-4" /> Ingredients
             </TabsTrigger>
           </TabsList>
 
@@ -67,21 +67,21 @@ const Index = () => {
                 <div className="h-20 w-20 rounded-full bg-accent flex items-center justify-center mb-4">
                   <Sparkles className="h-10 w-10 text-primary" />
                 </div>
-                <h2 className="text-2xl font-bold mb-2">Selamat Datang ke NutriBudget MY</h2>
+                <h2 className="text-2xl font-bold mb-2">Welcome to NutriBudget MY</h2>
                 <p className="text-muted-foreground max-w-md mb-6">
-                  Jana pelan hidangan mingguan yang mematuhi garis panduan Suku-Suku Separuh MOH
-                  dan kekal dalam bajet RMT RM3.50 – RM4.00 per pelajar.
+                  Generate weekly meal plans that follow the MOH Quarter-Quarter-Half guidelines
+                  and stay within the RMT budget of RM3.50 – RM4.00 per student.
                 </p>
                 <Button onClick={handleGenerate} size="lg" className="gap-2">
                   <Sparkles className="h-5 w-5" />
-                  Jana Pelan Hidangan Pertama
+                  Generate First Meal Plan
                 </Button>
               </div>
             ) : (
               <>
                 <BudgetSummary meals={meals} />
                 <div>
-                  <h2 className="text-xl font-bold mb-4">Pelan Hidangan Mingguan</h2>
+                  <h2 className="text-xl font-bold mb-4">Weekly Meal Plan</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {meals.map((meal, i) => (
                       <MealCard key={meal.id} meal={meal} index={i} />
@@ -101,7 +101,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t py-4 mt-8">
         <div className="container text-center text-xs text-muted-foreground">
-          NutriBudget MY · PutraHack 2026 · Tema: Keselamatan Makanan
+          NutriBudget MY · PutraHack 2026 · Theme: Food Safety
         </div>
       </footer>
     </div>

@@ -16,7 +16,7 @@ export interface MealPlan {
 
 const BUDGET_MIN = 3.50;
 const BUDGET_MAX = 4.00;
-const DAYS = ["Isnin", "Selasa", "Rabu", "Khamis", "Jumaat"];
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];

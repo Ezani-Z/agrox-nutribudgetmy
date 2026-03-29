@@ -49,11 +49,11 @@ export function IngredientManager({ ingredients, onUpdate }: IngredientManagerPr
   return (
     <Card className="border-border/60">
       <CardHeader>
-        <CardTitle className="text-lg">Pangkalan Data Bahan</CardTitle>
+        <CardTitle className="text-lg">Ingredient Database</CardTitle>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cari bahan..."
+            placeholder="Search ingredients..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="pl-9"
@@ -65,6 +65,7 @@ export function IngredientManager({ ingredients, onUpdate }: IngredientManagerPr
             className="cursor-pointer"
             onClick={() => setActiveCategory("all")}
           >
+            All
             Semua
           </Badge>
           {CATEGORIES.map(cat => (
