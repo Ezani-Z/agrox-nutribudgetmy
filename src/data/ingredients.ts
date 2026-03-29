@@ -54,10 +54,10 @@ export const defaultIngredients: Ingredient[] = [
 ];
 
 export const categoryLabels: Record<IngredientCategory, string> = {
-  carb: "Karbohidrat",
+  carb: "Carbohydrates",
   protein: "Protein",
-  vegetable: "Sayur-sayuran",
-  fruit: "Buah-buahan",
+  vegetable: "Vegetables",
+  fruit: "Fruits",
 };
 
 export const categoryColors: Record<IngredientCategory, string> = {

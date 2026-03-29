@@ -25,47 +25,47 @@ export function BudgetSummary({ meals }: BudgetSummaryProps) {
       <Card className="border-border/60">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <DollarSign className="h-4 w-4" /> Purata Kos
+            <DollarSign className="h-4 w-4" /> Average Cost
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-3xl font-bold text-primary">RM{avgCost.toFixed(2)}</p>
-          <p className="text-sm text-muted-foreground">per hidangan / pelajar</p>
-          <p className="text-xs mt-1 text-muted-foreground">Jumlah Mingguan: RM{totalWeekly.toFixed(2)}</p>
+          <p className="text-sm text-muted-foreground">per meal / student</p>
+          <p className="text-xs mt-1 text-muted-foreground">Weekly Total: RM{totalWeekly.toFixed(2)}</p>
         </CardContent>
       </Card>
 
       <Card className="border-border/60">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <Target className="h-4 w-4" /> Skor Nutrisi
+            <Target className="h-4 w-4" /> Nutrition Score
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-3xl font-bold text-primary">{avgScore}%</p>
-          <p className="text-sm text-muted-foreground">purata pematuhan Suku-Suku Separuh</p>
+          <p className="text-sm text-muted-foreground">average Quarter-Quarter-Half compliance</p>
         </CardContent>
       </Card>
 
       <Card className="border-border/60">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" /> Status Bajet
+            <TrendingUp className="h-4 w-4" /> Budget Status
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className={`text-3xl font-bold ${allWithinBudget ? "text-primary" : "text-destructive"}`}>
-            {allWithinBudget ? "✅ Patuh" : "⚠️ Semak"}
+            {allWithinBudget ? "✅ Compliant" : "⚠️ Review"}
           </p>
           <p className="text-sm text-muted-foreground">
-            Had RMT: RM{BUDGET_RANGE.min.toFixed(2)} – RM{BUDGET_RANGE.max.toFixed(2)}
+            RMT Limit: RM{BUDGET_RANGE.min.toFixed(2)} – RM{BUDGET_RANGE.max.toFixed(2)}
           </p>
         </CardContent>
       </Card>
 
       <Card className="md:col-span-3 border-border/60">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Kos Harian</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Daily Cost</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-48">

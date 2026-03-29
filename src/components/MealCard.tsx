@@ -10,9 +10,9 @@ interface MealCardProps {
 }
 
 const statusConfig = {
-  success: { label: "Dalam Bajet", className: "bg-accent text-accent-foreground" },
-  warning: { label: "Hampir Had", className: "bg-secondary/20 text-secondary" },
-  danger: { label: "Melebihi Bajet", className: "bg-destructive/15 text-destructive" },
+  success: { label: "Within Budget", className: "bg-accent text-accent-foreground" },
+  warning: { label: "Near Limit", className: "bg-secondary/20 text-secondary" },
+  danger: { label: "Over Budget", className: "bg-destructive/15 text-destructive" },
 };
 
 export function MealCard({ meal, index }: MealCardProps) {
@@ -30,7 +30,7 @@ export function MealCard({ meal, index }: MealCardProps) {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-2xl font-bold text-primary">RM{meal.totalCost.toFixed(2)}</span>
-          <span className="text-sm text-muted-foreground">/ pelajar</span>
+          <span className="text-sm text-muted-foreground">/ student</span>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -38,40 +38,40 @@ export function MealCard({ meal, index }: MealCardProps) {
           <div className="flex items-center gap-2 rounded-md bg-muted p-2">
             <Wheat className="h-4 w-4 text-secondary" />
             <div>
-              <p className="text-xs text-muted-foreground">Karbohidrat</p>
-              <p className="text-sm font-medium">{meal.carb.nameMY}</p>
+              <p className="text-xs text-muted-foreground">Carbohydrate</p>
+              <p className="text-sm font-medium">{meal.carb.name}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-md bg-muted p-2">
             <UtensilsCrossed className="h-4 w-4 text-destructive" />
             <div>
               <p className="text-xs text-muted-foreground">Protein</p>
-              <p className="text-sm font-medium">{meal.protein.nameMY}</p>
+              <p className="text-sm font-medium">{meal.protein.name}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-md bg-muted p-2">
             <Leaf className="h-4 w-4 text-primary" />
             <div>
-              <p className="text-xs text-muted-foreground">Sayuran</p>
-              <p className="text-sm font-medium">{meal.vegetable.nameMY}</p>
+              <p className="text-xs text-muted-foreground">Vegetable</p>
+              <p className="text-sm font-medium">{meal.vegetable.name}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-md bg-muted p-2">
             <Apple className="h-4 w-4 text-primary" />
             <div>
-              <p className="text-xs text-muted-foreground">Buah</p>
-              <p className="text-sm font-medium">{meal.fruit.nameMY}</p>
+              <p className="text-xs text-muted-foreground">Fruit</p>
+              <p className="text-sm font-medium">{meal.fruit.name}</p>
             </div>
           </div>
         </div>
 
         <div className="border-t pt-3">
-          <p className="text-xs font-medium text-muted-foreground mb-2">Suku-Suku Separuh</p>
+          <p className="text-xs font-medium text-muted-foreground mb-2">Quarter-Quarter-Half</p>
           <NutritionPieChart meal={meal} />
         </div>
 
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Skor Nutrisi</span>
+          <span className="text-muted-foreground">Nutrition Score</span>
           <div className="flex items-center gap-2">
             <div className="h-2 w-20 rounded-full bg-muted overflow-hidden">
               <div
