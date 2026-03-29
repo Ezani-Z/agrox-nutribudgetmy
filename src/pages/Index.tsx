@@ -7,7 +7,7 @@ import { BudgetSummary } from "@/components/BudgetSummary";
 import { IngredientManager } from "@/components/IngredientManager";
 import { defaultIngredients, Ingredient, StoreId, stores } from "@/data/ingredients";
 import { generateWeeklyMealPlan, MealPlan } from "@/utils/mealGenerator";
-import { Sparkles, UtensilsCrossed, Database, BarChart3, Download, Store, Globe } from "lucide-react";
+import { Sparkles, UtensilsCrossed, Database, BarChart3, Download, Store, Globe, TrendingUp } from "lucide-react";
 import { exportMealPlanPdf } from "@/utils/exportPdf";
 import { useLang } from "@/hooks/useLang";
 import {
@@ -25,6 +25,8 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { toast } from "@/hooks/use-toast";
+import { BestValueInsights } from "@/components/BestValueInsights";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import {
   AlertDialog,
   AlertDialogAction,
