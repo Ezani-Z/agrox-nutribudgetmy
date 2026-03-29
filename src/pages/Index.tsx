@@ -6,7 +6,8 @@ import { BudgetSummary } from "@/components/BudgetSummary";
 import { IngredientManager } from "@/components/IngredientManager";
 import { defaultIngredients, Ingredient } from "@/data/ingredients";
 import { generateWeeklyMealPlan, MealPlan } from "@/utils/mealGenerator";
-import { Sparkles, UtensilsCrossed, Database, BarChart3 } from "lucide-react";
+import { Sparkles, UtensilsCrossed, Database, BarChart3, Download } from "lucide-react";
+import { exportMealPlanPdf } from "@/utils/exportPdf";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -98,7 +99,13 @@ const Index = () => {
               <>
                 <BudgetSummary meals={meals} />
                 <div>
-                  <h2 className="text-xl font-bold mb-4">Weekly Meal Plan</h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold">Weekly Meal Plan</h2>
+                    <Button variant="outline" size="sm" className="gap-2" onClick={() => exportMealPlanPdf(meals)}>
+                      <Download className="h-4 w-4" />
+                      Export PDF
+                    </Button>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {meals.map((meal, i) => (
                       <MealCard key={meal.id} meal={meal} index={i} />
