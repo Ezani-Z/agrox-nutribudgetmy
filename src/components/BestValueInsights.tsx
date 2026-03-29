@@ -91,19 +91,29 @@ export function BestValueInsights({ ingredients, meals = [] }: BestValueInsights
   swaps.sort((a, b) => b.savingsRM - a.savingsRM || b.proteinGain - a.proteinGain);
   const topSwaps = swaps.slice(0, 5);
 
-  // ── Category spending analysis ──
+  // ── Category spending analysis (from actual meal plan when available) ──
   const categoryStats = categories.map(cat => {
     const items = available.filter(i => i.category === cat);
     if (items.length === 0) return null;
-    const avgPrice = items.reduce((s, i) => s + i.pricePerServing, 0) / items.length;
-    const avgProtein = items.reduce((s, i) => s + i.proteinG, 0) / items.length;
-    const avgCalories = items.reduce((s, i) => s + i.calories, 0) / items.length;
+
+    const slot = cat === "carb" ? "carb" : cat === "protein" ? "protein" : cat === "vegetable" ? "vegetable" : "fruit";
+    const planItems = meals.map(m => m[slot as keyof MealPlan] as Ingredient);
+    const hasPlan = meals.length > 0;
+
+    // Use actual plan data if available, otherwise fall back to all-ingredients average
+    const sourceItems = hasPlan ? planItems : items;
+    const avgPrice = sourceItems.reduce((s, i) => s + i.pricePerServing, 0) / sourceItems.length;
+    const avgProtein = sourceItems.reduce((s, i) => s + i.proteinG, 0) / sourceItems.length;
+    const avgCalories = sourceItems.reduce((s, i) => s + i.calories, 0) / sourceItems.length;
+    const totalCost = hasPlan ? planItems.reduce((s, i) => s + i.pricePerServing, 0) : null;
+    const totalCalories = hasPlan ? planItems.reduce((s, i) => s + i.calories, 0) : null;
+
     const bestValue = items.reduce((best, cur) =>
       getProteinPerRM(cur) + getCaloriesPerRM(cur) >
       getProteinPerRM(best) + getCaloriesPerRM(best) ? cur : best
     );
-    return { cat, count: items.length, avgPrice, avgProtein, avgCalories, bestValue };
-  }).filter(Boolean) as { cat: IngredientCategory; count: number; avgPrice: number; avgProtein: number; avgCalories: number; bestValue: Ingredient }[];
+    return { cat, count: items.length, avgPrice, avgProtein, avgCalories, totalCost, totalCalories, bestValue, hasPlan };
+  }).filter(Boolean) as { cat: IngredientCategory; count: number; avgPrice: number; avgProtein: number; avgCalories: number; totalCost: number | null; totalCalories: number | null; bestValue: Ingredient; hasPlan: boolean }[];
 
   // ── Headline insight ──
   const proteins = available.filter(i => i.category === "protein" && i.proteinG > 0);
@@ -272,22 +282,37 @@ export function BestValueInsights({ ingredients, meals = [] }: BestValueInsights
               <div key={stat.cat} className="p-3 rounded-lg border border-border/40 bg-muted/30 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-sm">{getCatLabel(stat.cat)}</span>
-                  <span className="text-xs text-muted-foreground">{stat.count} {t("items", "item")}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {stat.hasPlan
+                      ? t(`${meals.length}-day plan`, `Pelan ${meals.length} hari`)
+                      : `${stat.count} ${t("items", "item")}`}
+                  </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
                     <p className="text-lg font-bold text-primary">RM{stat.avgPrice.toFixed(2)}</p>
-                    <p className="text-[10px] text-muted-foreground">{t("Avg Price", "Harga Purata")}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {stat.hasPlan ? t("Avg/Day", "Purata/Hari") : t("Avg Price", "Harga Purata")}
+                    </p>
                   </div>
                   <div>
                     <p className="text-lg font-bold">{stat.avgProtein.toFixed(0)}g</p>
-                    <p className="text-[10px] text-muted-foreground">{t("Avg Protein", "Protein Purata")}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {stat.hasPlan ? t("Avg/Day", "Purata/Hari") : t("Avg Protein", "Protein Purata")}
+                    </p>
                   </div>
                   <div>
                     <p className="text-lg font-bold">{stat.avgCalories.toFixed(0)}</p>
-                    <p className="text-[10px] text-muted-foreground">{t("Avg kcal", "Purata kcal")}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {stat.hasPlan ? t("kcal/Day", "kcal/Hari") : t("Avg kcal", "Purata kcal")}
+                    </p>
                   </div>
                 </div>
+                {stat.hasPlan && stat.totalCalories !== null && stat.totalCost !== null && (
+                  <div className="text-xs text-muted-foreground border-t border-border/30 pt-1.5 mt-1">
+                    {t("Weekly total:", "Jumlah mingguan:")} <span className="font-medium text-foreground">{stat.totalCalories} kcal</span> · <span className="font-medium text-foreground">RM{stat.totalCost.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="text-xs text-muted-foreground">
                   ⭐ {t("Best value:", "Nilai terbaik:")} <span className="font-medium text-foreground">{getName(stat.bestValue)}</span>
                 </div>
