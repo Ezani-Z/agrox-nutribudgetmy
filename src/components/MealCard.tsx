@@ -24,14 +24,40 @@ export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCa
   const status = getBudgetStatus(meal.totalCost);
   const config = statusConfig[status];
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: meal.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    animationDelay: `${index * 80}ms`,
+  };
+
   return (
     <Card
-      className={`overflow-hidden animate-fade-in border-border/60 hover:shadow-md transition-shadow ${isLocked ? "ring-2 ring-primary/40" : ""}`}
-      style={{ animationDelay: `${index * 80}ms` }}
+      ref={setNodeRef}
+      style={style}
+      className={`overflow-hidden animate-fade-in border-border/60 hover:shadow-md transition-shadow ${isLocked ? "ring-2 ring-primary/40" : ""} ${isDragging ? "z-50 shadow-lg" : ""}`}
     >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{meal.day}</CardTitle>
+          <div className="flex items-center gap-2">
+            <button
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+            >
+              <GripVertical className="h-4 w-4" />
+            </button>
+            <CardTitle className="text-lg">{meal.day}</CardTitle>
+          </div>
           <div className="flex items-center gap-2">
             {isLocked && (
               <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs">
