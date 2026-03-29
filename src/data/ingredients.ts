@@ -7,7 +7,7 @@ export interface Ingredient {
   category: IngredientCategory;
   pricePerServing: number;
   servingSize: number; // in grams
-  servingUnit: string; // typically "g"
+  servingUnit?: string; // typically "g"
   isAvailable: boolean;
   /** Protein in grams per serving */
   proteinG: number;
