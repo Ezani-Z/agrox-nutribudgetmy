@@ -162,7 +162,17 @@ export function BestValueInsights({ ingredients, meals = [] }: BestValueInsights
           </CardHeader>
           <CardContent className="space-y-3">
             {topSwaps.map((swap, i) => (
-              <div key={i} className="p-3 rounded-lg bg-muted/40 border border-border/40 space-y-1">
+              <div key={i} className="p-3 rounded-lg bg-muted/40 border border-border/40 space-y-1.5">
+                {swap.days.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Calendar className="h-3 w-3 text-muted-foreground shrink-0" />
+                    {(lang === "en" ? swap.days : swap.daysMY).map(day => (
+                      <Badge key={day} variant="secondary" className="text-[10px] px-1.5 py-0">
+                        {day}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Badge variant="outline" className="text-xs shrink-0">
                     {getCatLabel(swap.from.category)}
@@ -186,6 +196,11 @@ export function BestValueInsights({ ingredients, meals = [] }: BestValueInsights
                     </Badge>
                   )}
                 </div>
+                {swap.days.length === 0 && meals.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground italic">
+                    {t("Not used in current plan", "Tidak digunakan dalam pelan semasa")}
+                  </p>
+                )}
               </div>
             ))}
           </CardContent>
