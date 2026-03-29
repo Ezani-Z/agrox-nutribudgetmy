@@ -26,6 +26,7 @@ const Index = () => {
   });
   const [meals, setMeals] = useState<MealPlan[]>([]);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleUpdateIngredients = useCallback((updated: Ingredient[]) => {
     setIngredients(updated);
