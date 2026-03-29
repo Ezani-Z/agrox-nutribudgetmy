@@ -22,11 +22,11 @@ import {
 
 const Index = () => {
   const [ingredients, setIngredients] = useState<Ingredient[]>(() => {
-    // Clear old cached data to use updated prices
     localStorage.removeItem("nutribudget-ingredients");
     return defaultIngredients;
   });
   const [meals, setMeals] = useState<MealPlan[]>([]);
+  const [lockedMealIds, setLockedMealIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -36,15 +36,37 @@ const Index = () => {
   }, []);
 
   const handleGenerate = useCallback(() => {
-    const plan = generateWeeklyMealPlan(ingredients);
-    setMeals(plan);
+    const lockedMeals = meals.filter(m => lockedMealIds.has(m.id));
+    const lockedDays = new Set(lockedMeals.map(m => m.day));
+    const newPlan = generateWeeklyMealPlan(ingredients, lockedDays);
+    const combined = [
+      ...lockedMeals,
+      ...newPlan,
+    ].sort((a, b) => {
+      const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+      return days.indexOf(a.day) - days.indexOf(b.day);
+    });
+    setMeals(combined);
     setActiveTab("dashboard");
-    if (plan.length > 0) {
-      toast({ title: "Meal Plan Generated", description: `${plan.length}-day meal plan created within budget.` });
+    if (combined.length > 0) {
+      const regenerated = newPlan.length;
+      toast({ title: "Meal Plan Generated", description: `${regenerated} meal(s) regenerated, ${lockedMeals.length} locked.` });
     } else {
       toast({ title: "No Valid Combinations", description: "Try adjusting ingredient prices or availability.", variant: "destructive" });
     }
-  }, [ingredients]);
+  }, [ingredients, meals, lockedMealIds]);
+
+  const handleToggleLock = useCallback((mealId: string) => {
+    setLockedMealIds(prev => {
+      const next = new Set(prev);
+      if (next.has(mealId)) {
+        next.delete(mealId);
+      } else {
+        next.add(mealId);
+      }
+      return next;
+    });
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -60,10 +82,18 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">School Canteen Meal Planner</p>
             </div>
           </div>
-          <Button onClick={() => meals.length > 0 ? setShowConfirm(true) : handleGenerate()} className="gap-2">
-            <Sparkles className="h-4 w-4" />
-            Generate Meal Plan
-          </Button>
+          <div className="flex items-center gap-2">
+            {meals.length > 0 && (
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => exportMealPlanPdf(meals)}>
+                <Download className="h-4 w-4" />
+                Export PDF
+              </Button>
+            )}
+            <Button onClick={() => meals.length > 0 ? setShowConfirm(true) : handleGenerate()} className="gap-2">
+              <Sparkles className="h-4 w-4" />
+              Generate Meal Plan
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -101,14 +131,21 @@ const Index = () => {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold">Weekly Meal Plan</h2>
-                    <Button variant="outline" size="sm" className="gap-2" onClick={() => exportMealPlanPdf(meals)}>
-                      <Download className="h-4 w-4" />
-                      Export PDF
-                    </Button>
+                    {lockedMealIds.size > 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        🔒 {lockedMealIds.size} meal(s) locked
+                      </p>
+                    )}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {meals.map((meal, i) => (
-                      <MealCard key={meal.id} meal={meal} index={i} />
+                      <MealCard
+                        key={meal.id}
+                        meal={meal}
+                        index={i}
+                        isLocked={lockedMealIds.has(meal.id)}
+                        onToggleLock={() => handleToggleLock(meal.id)}
+                      />
                     ))}
                   </div>
                 </div>
@@ -134,7 +171,9 @@ const Index = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Generate New Meal Plan?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will replace your current meal plan with a new one. This action cannot be undone.
+              {lockedMealIds.size > 0
+                ? `This will regenerate ${5 - lockedMealIds.size} unlocked meal(s). ${lockedMealIds.size} locked meal(s) will be kept.`
+                : "This will replace your current meal plan with a new one. This action cannot be undone."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
