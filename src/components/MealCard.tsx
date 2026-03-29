@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MealPlan, getBudgetStatus } from "@/utils/mealGenerator";
+import { MealPlan, getBudgetStatus, BUDGET_RANGE } from "@/utils/mealGenerator";
 import { NutritionPieChart } from "./NutritionPieChart";
+import { MealComponentSwapper } from "./MealComponentSwapper";
+import { Ingredient } from "@/data/ingredients";
 import { UtensilsCrossed, Leaf, Apple, Wheat, Lock, Unlock, GripVertical } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -13,6 +15,8 @@ interface MealCardProps {
   index: number;
   isLocked?: boolean;
   onToggleLock?: () => void;
+  allIngredients: Ingredient[];
+  onSwapComponent?: (mealId: string, slot: "carb" | "protein" | "vegetable" | "fruit", newIngredient: Ingredient) => void;
 }
 
 const statusConfig = {
@@ -21,7 +25,7 @@ const statusConfig = {
   danger: { en: "Over Budget", my: "Melebihi Bajet", className: "bg-destructive/15 text-destructive" },
 };
 
-export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCardProps) {
+export function MealCard({ meal, index, isLocked = false, onToggleLock, allIngredients, onSwapComponent }: MealCardProps) {
   const { lang, t } = useLang();
   const status = getBudgetStatus(meal.totalCost);
   const config = statusConfig[status];
@@ -42,7 +46,15 @@ export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCa
   };
 
   const dayLabel = lang === "en" ? meal.day : (meal.dayMY || meal.day);
-  const getName = (ing: { name: string; nameMY: string }) => lang === "en" ? ing.name : ing.nameMY;
+
+  const handleSwap = (slot: "carb" | "protein" | "vegetable" | "fruit", newIngredient: Ingredient) => {
+    onSwapComponent?.(meal.id, slot, newIngredient);
+  };
+
+  // Budget bar
+  const budgetPct = Math.min(((meal.totalCost - BUDGET_RANGE.min) / (BUDGET_RANGE.max - BUDGET_RANGE.min)) * 100, 150);
+  const isOver = meal.totalCost > BUDGET_RANGE.max;
+  const isUnder = meal.totalCost < BUDGET_RANGE.min;
 
   return (
     <Card
@@ -83,40 +95,55 @@ export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCa
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-primary">RM{meal.totalCost.toFixed(2)}</span>
+          <span className={`text-2xl font-bold ${isOver ? "text-destructive" : isUnder ? "text-secondary" : "text-primary"}`}>
+            RM{meal.totalCost.toFixed(2)}
+          </span>
           <span className="text-sm text-muted-foreground">/ {t("student", "pelajar")}</span>
+        </div>
+        {/* Budget mini-bar */}
+        <div className="mt-1">
+          <div className="flex justify-between text-[10px] text-muted-foreground mb-0.5">
+            <span>RM{BUDGET_RANGE.min.toFixed(2)}</span>
+            <span>RM{BUDGET_RANGE.max.toFixed(2)}</span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${isOver ? "bg-destructive" : isUnder ? "bg-secondary" : "bg-primary"}`}
+              style={{ width: `${Math.max(0, Math.min(budgetPct, 100))}%` }}
+            />
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center gap-2 rounded-md bg-muted p-2">
-            <Wheat className="h-4 w-4 text-secondary" />
-            <div>
-              <p className="text-xs text-muted-foreground">{t("Carb", "Karbohidrat")}</p>
-              <p className="text-sm font-medium">{getName(meal.carb)}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 rounded-md bg-muted p-2">
-            <UtensilsCrossed className="h-4 w-4 text-destructive" />
-            <div>
-              <p className="text-xs text-muted-foreground">{t("Protein", "Protein")}</p>
-              <p className="text-sm font-medium">{getName(meal.protein)}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 rounded-md bg-muted p-2">
-            <Leaf className="h-4 w-4 text-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">{t("Vegetable", "Sayuran")}</p>
-              <p className="text-sm font-medium">{getName(meal.vegetable)}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 rounded-md bg-muted p-2">
-            <Apple className="h-4 w-4 text-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">{t("Fruit", "Buah")}</p>
-              <p className="text-sm font-medium">{getName(meal.fruit)}</p>
-            </div>
-          </div>
+          <MealComponentSwapper
+            current={meal.carb}
+            category="carb"
+            allIngredients={allIngredients}
+            icon={<Wheat className="h-4 w-4 text-secondary shrink-0" />}
+            onSwap={(ing) => handleSwap("carb", ing)}
+          />
+          <MealComponentSwapper
+            current={meal.protein}
+            category="protein"
+            allIngredients={allIngredients}
+            icon={<UtensilsCrossed className="h-4 w-4 text-destructive shrink-0" />}
+            onSwap={(ing) => handleSwap("protein", ing)}
+          />
+          <MealComponentSwapper
+            current={meal.vegetable}
+            category="vegetable"
+            allIngredients={allIngredients}
+            icon={<Leaf className="h-4 w-4 text-primary shrink-0" />}
+            onSwap={(ing) => handleSwap("vegetable", ing)}
+          />
+          <MealComponentSwapper
+            current={meal.fruit}
+            category="fruit"
+            allIngredients={allIngredients}
+            icon={<Apple className="h-4 w-4 text-primary shrink-0" />}
+            onSwap={(ing) => handleSwap("fruit", ing)}
+          />
         </div>
 
         <div className="border-t pt-3">
