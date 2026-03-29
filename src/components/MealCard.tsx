@@ -66,7 +66,7 @@ export function MealCard({ meal, index }: MealCardProps) {
         </div>
 
         <div className="border-t pt-3">
-          <p className="text-xs font-medium text-muted-foreground mb-2">Quarter-Quarter-Half</p>
+          <p className="text-xs font-medium text-muted-foreground mb-2">Suku Suku Separuh</p>
           <NutritionPieChart meal={meal} />
         </div>
 
