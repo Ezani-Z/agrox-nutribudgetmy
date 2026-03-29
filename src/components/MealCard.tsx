@@ -1,12 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { MealPlan, getBudgetStatus } from "@/utils/mealGenerator";
 import { NutritionPieChart } from "./NutritionPieChart";
-import { UtensilsCrossed, Leaf, Apple, Wheat } from "lucide-react";
+import { UtensilsCrossed, Leaf, Apple, Wheat, Lock, Unlock } from "lucide-react";
 
 interface MealCardProps {
   meal: MealPlan;
   index: number;
+  isLocked?: boolean;
+  onToggleLock?: () => void;
 }
 
 const statusConfig = {
@@ -15,18 +18,37 @@ const statusConfig = {
   danger: { label: "Over Budget", className: "bg-destructive/15 text-destructive" },
 };
 
-export function MealCard({ meal, index }: MealCardProps) {
+export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCardProps) {
   const status = getBudgetStatus(meal.totalCost);
   const config = statusConfig[status];
 
   return (
-    <Card className="overflow-hidden animate-fade-in border-border/60 hover:shadow-md transition-shadow" style={{ animationDelay: `${index * 80}ms` }}>
+    <Card
+      className={`overflow-hidden animate-fade-in border-border/60 hover:shadow-md transition-shadow ${isLocked ? "ring-2 ring-primary/40" : ""}`}
+      style={{ animationDelay: `${index * 80}ms` }}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">{meal.day}</CardTitle>
-          <Badge variant="outline" className={config.className}>
-            {config.label}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {isLocked && (
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs">
+                Locked
+              </Badge>
+            )}
+            <Badge variant="outline" className={config.className}>
+              {config.label}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={onToggleLock}
+              title={isLocked ? "Unlock meal" : "Lock meal"}
+            >
+              {isLocked ? <Lock className="h-4 w-4 text-primary" /> : <Unlock className="h-4 w-4 text-muted-foreground" />}
+            </Button>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-2xl font-bold text-primary">RM{meal.totalCost.toFixed(2)}</span>

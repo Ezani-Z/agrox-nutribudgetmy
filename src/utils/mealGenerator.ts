@@ -36,7 +36,7 @@ function calculateNutritionScore(carbRatio: number, proteinRatio: number, vegFru
   return Math.max(0, Math.round(score));
 }
 
-export function generateWeeklyMealPlan(ingredients: Ingredient[]): MealPlan[] {
+export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set<string>): MealPlan[] {
   const available = ingredients.filter(i => i.isAvailable);
   const carbs = available.filter(i => i.category === "carb");
   const proteins = available.filter(i => i.category === "protein");
