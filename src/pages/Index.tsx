@@ -288,6 +288,10 @@ const Index = () => {
               onStoreChange={setSelectedStore}
             />
           </TabsContent>
+
+          <TabsContent value="bestvalue">
+            <BestValueInsights ingredients={ingredients} store={selectedStore} />
+          </TabsContent>
         </Tabs>
       </main>
 
