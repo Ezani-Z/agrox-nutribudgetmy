@@ -1,23 +1,23 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { MealPlan } from "@/utils/mealGenerator";
+import { useLang } from "@/hooks/useLang";
 
 interface NutritionPieChartProps {
   meal: MealPlan;
 }
 
 const COLORS = ["hsl(36, 60%, 50%)", "hsl(0, 60%, 55%)", "hsl(152, 55%, 33%)"];
-const IDEAL = [
-  { name: "Karbohidrat (25%)", value: 25 },
-  { name: "Protein (25%)", value: 25 },
-  { name: "Sayur & Buah (50%)", value: 50 },
-];
 
 export function NutritionPieChart({ meal }: NutritionPieChartProps) {
+  const { t } = useLang();
+
   const data = [
-    { name: "Karbohidrat", value: meal.carbRatio },
-    { name: "Protein", value: meal.proteinRatio },
-    { name: "Sayur & Buah", value: meal.vegFruitRatio },
+    { name: t("Carbohydrate", "Karbohidrat"), value: meal.carbRatio },
+    { name: t("Protein", "Protein"), value: meal.proteinRatio },
+    { name: t("Veg & Fruit", "Sayur & Buah"), value: meal.vegFruitRatio },
   ];
+
+  const ideal = [25, 25, 50];
 
   return (
     <div className="flex items-center gap-4">
@@ -38,7 +38,7 @@ export function NutritionPieChart({ meal }: NutritionPieChartProps) {
           <div key={item.name} className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i] }} />
             <span className="text-muted-foreground">{item.name}: <span className="font-semibold text-foreground">{item.value}%</span></span>
-            <span className="text-xs text-muted-foreground">(ideal: {IDEAL[i].value}%)</span>
+            <span className="text-xs text-muted-foreground">({t("ideal", "ideal")}: {ideal[i]}%)</span>
           </div>
         ))}
       </div>
