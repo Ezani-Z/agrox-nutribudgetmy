@@ -282,7 +282,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="bestvalue">
-            <BestValueInsights ingredients={ingredients} />
+            <BestValueInsights ingredients={ingredients} meals={meals} />
           </TabsContent>
         </Tabs>
       </main>
