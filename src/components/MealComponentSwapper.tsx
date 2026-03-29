@@ -50,8 +50,8 @@ export function MealComponentSwapper({
             {t(`Swap ${catLabel}`, `Tukar ${catLabel}`)}
           </p>
         </div>
-        <ScrollArea className="max-h-48">
-          <div className="p-1">
+        <ScrollArea className="h-48 overflow-y-auto">
+          <div className="p-1 space-y-0.5">
             {options.map(item => {
               const isSelected = item.id === current.id;
               return (

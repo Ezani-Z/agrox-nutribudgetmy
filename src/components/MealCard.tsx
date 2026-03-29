@@ -23,6 +23,7 @@ const statusConfig = {
   success: { en: "Within Budget", my: "Dalam Bajet", className: "bg-accent text-accent-foreground" },
   warning: { en: "Near Limit", my: "Hampir Had", className: "bg-secondary/20 text-secondary" },
   danger: { en: "Over Budget", my: "Melebihi Bajet", className: "bg-destructive/15 text-destructive" },
+  under: { en: "Under Budget", my: "Bawah Bajet", className: "bg-secondary/15 text-secondary" },
 };
 
 export function MealCard({ meal, index, isLocked = false, onToggleLock, allIngredients, onSwapComponent }: MealCardProps) {
