@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Ingredient, StoreId, getPrice, getProteinPerRM, getCaloriesPerRM } from "@/data/ingredients";
-import { TrendingUp, Zap, Award } from "lucide-react";
+import { Ingredient, IngredientCategory, StoreId, getPrice, getProteinPerRM, getCaloriesPerRM, categoryLabels } from "@/data/ingredients";
+import { TrendingUp, Zap, Award, ArrowRight, Lightbulb, BarChart3 } from "lucide-react";
 import { useLang } from "@/hooks/useLang";
 
 interface BestValueInsightsProps {
@@ -9,24 +9,92 @@ interface BestValueInsightsProps {
   store: StoreId;
 }
 
+interface SwapSuggestion {
+  from: Ingredient;
+  to: Ingredient;
+  savingsRM: number;
+  proteinGain: number; // positive = more protein
+  calorieChange: number;
+  reason: string;
+  reasonMY: string;
+}
+
 export function BestValueInsights({ ingredients, store }: BestValueInsightsProps) {
   const { lang, t } = useLang();
   const available = ingredients.filter(i => i.isAvailable);
 
-  // Top 5 protein-per-RM across all categories
+  const getName = (i: Ingredient) => lang === "en" ? i.name : i.nameMY;
+  const getCatLabel = (cat: IngredientCategory) => lang === "en" ? categoryLabels[cat].en : categoryLabels[cat].my;
+
+  // ── Top 5 protein-per-RM ──
   const proteinRanked = [...available]
     .filter(i => i.proteinG > 0)
     .map(i => ({ ...i, pprm: getProteinPerRM(i, store), cprm: getCaloriesPerRM(i, store) }))
     .sort((a, b) => b.pprm - a.pprm)
     .slice(0, 5);
 
-  // Top 5 calories-per-RM
+  // ── Top 5 calories-per-RM ──
   const calorieRanked = [...available]
     .map(i => ({ ...i, cprm: getCaloriesPerRM(i, store) }))
     .sort((a, b) => b.cprm - a.cprm)
     .slice(0, 5);
 
-  // Generate comparison insights
+  // ── Smart Swap Suggestions ──
+  const swaps: SwapSuggestion[] = [];
+
+  // For each category, find expensive items that can be swapped for cheaper + more nutritious alternatives
+  const categories: IngredientCategory[] = ["protein", "carb", "vegetable", "fruit"];
+  for (const cat of categories) {
+    const catItems = available.filter(i => i.category === cat);
+    if (catItems.length < 2) continue;
+
+    const sorted = [...catItems].sort((a, b) => getPrice(a, store) - getPrice(b, store));
+
+    for (let i = 0; i < sorted.length; i++) {
+      for (let j = i + 1; j < sorted.length; j++) {
+        const cheap = sorted[i];
+        const expensive = sorted[j];
+        const savings = getPrice(expensive, store) - getPrice(cheap, store);
+        const proteinGain = cheap.proteinG - expensive.proteinG;
+
+        if (savings >= 0.10 && proteinGain >= 0) {
+          const proteinPerRMCheap = getProteinPerRM(cheap, store);
+          const proteinPerRMExpensive = getProteinPerRM(expensive, store);
+          const ratio = proteinPerRMExpensive > 0 ? (proteinPerRMCheap / proteinPerRMExpensive).toFixed(1) : "∞";
+
+          swaps.push({
+            from: expensive,
+            to: cheap,
+            savingsRM: savings,
+            proteinGain,
+            calorieChange: cheap.calories - expensive.calories,
+            reason: `Swap ${getName(expensive)} → ${getName(cheap)}: Save RM${savings.toFixed(2)}/serving${proteinGain > 0 ? ` and gain ${proteinGain}g protein` : ""}. ${ratio}× better protein/RM.`,
+            reasonMY: `Tukar ${getName(expensive)} → ${getName(cheap)}: Jimat RM${savings.toFixed(2)}/hidangan${proteinGain > 0 ? ` dan dapat ${proteinGain}g lebih protein` : ""}. ${ratio}× lebih baik protein/RM.`,
+          });
+        }
+      }
+    }
+  }
+
+  // Sort swaps by savings descending, take top 5
+  swaps.sort((a, b) => b.savingsRM - a.savingsRM || b.proteinGain - a.proteinGain);
+  const topSwaps = swaps.slice(0, 5);
+
+  // ── Category spending analysis ──
+  const categoryStats = categories.map(cat => {
+    const items = available.filter(i => i.category === cat);
+    if (items.length === 0) return null;
+    const avgPrice = items.reduce((s, i) => s + getPrice(i, store), 0) / items.length;
+    const avgProtein = items.reduce((s, i) => s + i.proteinG, 0) / items.length;
+    const avgCalories = items.reduce((s, i) => s + i.calories, 0) / items.length;
+    const bestValue = items.reduce((best, cur) =>
+      getProteinPerRM(cur, store) + getCaloriesPerRM(cur, store) >
+      getProteinPerRM(best, store) + getCaloriesPerRM(best, store) ? cur : best
+    );
+    return { cat, count: items.length, avgPrice, avgProtein, avgCalories, bestValue };
+  }).filter(Boolean) as { cat: IngredientCategory; count: number; avgPrice: number; avgProtein: number; avgCalories: number; bestValue: Ingredient }[];
+
+  // ── Headline insight ──
   const proteins = available.filter(i => i.category === "protein" && i.proteinG > 0);
   const bestProtein = proteins.length > 0
     ? proteins.reduce((best, cur) => getProteinPerRM(cur, store) > getProteinPerRM(best, store) ? cur : best)
@@ -34,18 +102,20 @@ export function BestValueInsights({ ingredients, store }: BestValueInsightsProps
   const worstProtein = proteins.length > 1
     ? proteins.reduce((worst, cur) => getProteinPerRM(cur, store) < getProteinPerRM(worst, store) ? cur : worst)
     : null;
-
-  const getName = (i: Ingredient) => lang === "en" ? i.name : i.nameMY;
-
   const ratio = bestProtein && worstProtein
     ? (getProteinPerRM(bestProtein, store) / getProteinPerRM(worstProtein, store)).toFixed(1)
     : null;
 
+  // ── Weekly savings potential ──
+  const weeklySavings = topSwaps.length > 0
+    ? (topSwaps.reduce((s, sw) => s + sw.savingsRM, 0) * 5).toFixed(2)
+    : null;
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {/* Insight callout */}
+    <div className="space-y-4">
+      {/* Headline insight */}
       {bestProtein && worstProtein && ratio && (
-        <Card className="md:col-span-2 border-primary/30 bg-primary/5">
+        <Card className="border-primary/30 bg-primary/5">
           <CardContent className="flex items-start gap-3 pt-5 pb-4">
             <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
               <Award className="h-5 w-5 text-primary" />
@@ -56,64 +126,154 @@ export function BestValueInsights({ ingredients, store }: BestValueInsightsProps
               </p>
               <p className="text-sm text-muted-foreground mt-1">
                 {t(
-                  `At current ${store === "default" ? "estimated" : store} prices, ${getName(bestProtein)} gives you ${ratio}× the protein per RM compared to ${getName(worstProtein)}.`,
-                  `Pada harga ${store === "default" ? "anggaran" : store} semasa, ${getName(bestProtein)} memberi anda ${ratio}× protein setiap RM berbanding ${getName(worstProtein)}.`
+                  `At current ${store === "custom" ? "your" : store === "default" ? "estimated" : store} prices, ${getName(bestProtein)} gives you ${ratio}× the protein per RM compared to ${getName(worstProtein)}.`,
+                  `Pada harga ${store === "custom" ? "anda" : store === "default" ? "anggaran" : store} semasa, ${getName(bestProtein)} memberi anda ${ratio}× protein setiap RM berbanding ${getName(worstProtein)}.`
                 )}
               </p>
+              {weeklySavings && (
+                <p className="text-sm font-medium text-primary mt-1">
+                  {t(
+                    `💰 Potential weekly savings: RM${weeklySavings} by applying top swaps below.`,
+                    `💰 Potensi jimat mingguan: RM${weeklySavings} dengan menerapkan pertukaran di bawah.`
+                  )}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Protein per RM ranking */}
-      <Card className="border-border/60">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            {t("Top Protein per RM", "Protein Tertinggi per RM")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {proteinRanked.map((item, i) => (
-            <div key={item.id} className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-muted-foreground w-4">#{i + 1}</span>
-                <span className="font-medium">{getName(item)}</span>
-                <Badge variant="outline" className="text-xs px-1.5 py-0">
-                  RM{getPrice(item, store).toFixed(2)}
-                </Badge>
+      {/* Smart Swap Suggestions */}
+      {topSwaps.length > 0 && (
+        <Card className="border-border/60">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Lightbulb className="h-4 w-4" />
+              {t("Smart Swap Suggestions", "Cadangan Pertukaran Pintar")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {topSwaps.map((swap, i) => (
+              <div key={i} className="p-3 rounded-lg bg-muted/40 border border-border/40 space-y-1">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Badge variant="outline" className="text-xs shrink-0">
+                    {getCatLabel(swap.from.category)}
+                  </Badge>
+                  <span className="text-destructive line-through">{getName(swap.from)}</span>
+                  <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                  <span className="text-primary font-semibold">{getName(swap.to)}</span>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <Badge className="bg-primary/15 text-primary border-primary/30 hover:bg-primary/20">
+                    {t("Save", "Jimat")} RM{swap.savingsRM.toFixed(2)}
+                  </Badge>
+                  {swap.proteinGain > 0 && (
+                    <Badge className="bg-accent text-accent-foreground border-primary/20 hover:bg-accent/80">
+                      +{swap.proteinGain}g protein
+                    </Badge>
+                  )}
+                  {swap.calorieChange !== 0 && (
+                    <Badge variant="outline" className="text-xs">
+                      {swap.calorieChange > 0 ? "+" : ""}{swap.calorieChange} kcal
+                    </Badge>
+                  )}
+                </div>
               </div>
-              <span className="font-semibold text-primary">
-                {item.pprm.toFixed(1)}g/RM
-              </span>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Calories per RM ranking */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Protein per RM ranking */}
+        <Card className="border-border/60">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              {t("Top Protein per RM", "Protein Tertinggi per RM")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {proteinRanked.map((item, i) => (
+              <div key={item.id} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-muted-foreground w-4">#{i + 1}</span>
+                  <span className="font-medium">{getName(item)}</span>
+                  <Badge variant="outline" className="text-xs px-1.5 py-0">
+                    RM{getPrice(item, store).toFixed(2)}
+                  </Badge>
+                </div>
+                <span className="font-semibold text-primary">
+                  {item.pprm.toFixed(1)}g/RM
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Calories per RM ranking */}
+        <Card className="border-border/60">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              {t("Top Energy per RM", "Tenaga Tertinggi per RM")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {calorieRanked.map((item, i) => (
+              <div key={item.id} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-muted-foreground w-4">#{i + 1}</span>
+                  <span className="font-medium">{getName(item)}</span>
+                  <Badge variant="outline" className="text-xs px-1.5 py-0">
+                    RM{getPrice(item, store).toFixed(2)}
+                  </Badge>
+                </div>
+                <span className="font-semibold text-primary">
+                  {Math.round(item.cprm)} kcal/RM
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Category Nutrient Dashboard */}
       <Card className="border-border/60">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <Zap className="h-4 w-4" />
-            {t("Top Energy per RM", "Tenaga Tertinggi per RM")}
+            <BarChart3 className="h-4 w-4" />
+            {t("Category Breakdown", "Pecahan Kategori")}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {calorieRanked.map((item, i) => (
-            <div key={item.id} className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-muted-foreground w-4">#{i + 1}</span>
-                <span className="font-medium">{getName(item)}</span>
-                <Badge variant="outline" className="text-xs px-1.5 py-0">
-                  RM{getPrice(item, store).toFixed(2)}
-                </Badge>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {categoryStats.map(stat => (
+              <div key={stat.cat} className="p-3 rounded-lg border border-border/40 bg-muted/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-sm">{getCatLabel(stat.cat)}</span>
+                  <span className="text-xs text-muted-foreground">{stat.count} {t("items", "item")}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="text-lg font-bold text-primary">RM{stat.avgPrice.toFixed(2)}</p>
+                    <p className="text-[10px] text-muted-foreground">{t("Avg Price", "Harga Purata")}</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">{stat.avgProtein.toFixed(0)}g</p>
+                    <p className="text-[10px] text-muted-foreground">{t("Avg Protein", "Protein Purata")}</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold">{stat.avgCalories.toFixed(0)}</p>
+                    <p className="text-[10px] text-muted-foreground">{t("Avg kcal", "Purata kcal")}</p>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  ⭐ {t("Best value:", "Nilai terbaik:")} <span className="font-medium text-foreground">{getName(stat.bestValue)}</span>
+                </div>
               </div>
-              <span className="font-semibold text-primary">
-                {Math.round(item.cprm)} kcal/RM
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
