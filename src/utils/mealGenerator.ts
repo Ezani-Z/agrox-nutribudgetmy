@@ -136,10 +136,11 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set
   return mealPlans;
 }
 
-export function getBudgetStatus(cost: number): "success" | "warning" | "danger" {
+export function getBudgetStatus(cost: number): "success" | "warning" | "danger" | "under" {
   if (cost >= BUDGET_MIN && cost <= BUDGET_MAX) return "success";
   if (cost > BUDGET_MAX && cost <= BUDGET_MAX + 0.30) return "warning";
-  return "danger";
+  if (cost > BUDGET_MAX + 0.30) return "danger";
+  return "under";
 }
 
 export const BUDGET_RANGE = { min: BUDGET_MIN, max: BUDGET_MAX };
