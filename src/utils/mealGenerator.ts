@@ -55,6 +55,9 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set
     return [];
   }
 
+  const mealPlans: MealPlan[] = [];
+  const usedCombos = new Set<string>();
+
   // Track ingredient usage across the week for variety
   const ingredientUsage: Record<string, number> = {};
   const trackUsage = (meal: MealPlan) => {
