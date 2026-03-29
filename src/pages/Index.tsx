@@ -257,6 +257,8 @@ const Index = () => {
                             index={i}
                             isLocked={lockedMealIds.has(meal.id)}
                             onToggleLock={() => handleToggleLock(meal.id)}
+                            allIngredients={ingredients}
+                            onSwapComponent={handleSwapComponent}
                           />
                         ))}
                       </div>
