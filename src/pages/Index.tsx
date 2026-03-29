@@ -115,6 +115,23 @@ const Index = () => {
           NutriBudget MY · PutraHack 2026 · Theme: Food Safety
         </div>
       </footer>
+
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Generate New Meal Plan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will replace your current meal plan with a new one. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { handleGenerate(); setShowConfirm(false); }}>
+              Generate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
