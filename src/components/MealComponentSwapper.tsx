@@ -44,7 +44,7 @@ export function MealComponentSwapper({
           <ChevronDown className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="start">
+      <PopoverContent className="w-64 p-0 z-[100]" align="start" side="bottom" sideOffset={4}>
         <div className="p-2 border-b">
           <p className="text-xs font-medium text-muted-foreground">
             {t(`Swap ${catLabel}`, `Tukar ${catLabel}`)}
