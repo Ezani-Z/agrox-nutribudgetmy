@@ -33,10 +33,9 @@ export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCa
     isDragging,
   } = useSortable({ id: meal.id });
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
     animationDelay: `${index * 80}ms`,
   };
 
@@ -44,7 +43,7 @@ export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCa
     <Card
       ref={setNodeRef}
       style={style}
-      className={`overflow-hidden animate-fade-in border-border/60 hover:shadow-md transition-shadow ${isLocked ? "ring-2 ring-primary/40" : ""} ${isDragging ? "z-50 shadow-lg" : ""}`}
+      className={`overflow-hidden animate-fade-in border-border/60 hover:shadow-md transition-all duration-200 ${isLocked ? "ring-2 ring-primary/40" : ""} ${isDragging ? "opacity-30 scale-95 border-dashed border-2 border-primary/50 shadow-none" : ""}`}
     >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">

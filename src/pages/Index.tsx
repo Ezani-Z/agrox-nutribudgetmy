@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MealCard } from "@/components/MealCard";
+import { MealCard, MealCardOverlay } from "@/components/MealCard";
 import { BudgetSummary } from "@/components/BudgetSummary";
 import { IngredientManager } from "@/components/IngredientManager";
 import { defaultIngredients, Ingredient } from "@/data/ingredients";
@@ -14,6 +14,8 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  DragOverlay,
+  type DragStartEvent,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
