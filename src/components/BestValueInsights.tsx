@@ -1,11 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Ingredient, IngredientCategory, getProteinPerRM, getCaloriesPerRM, categoryLabels } from "@/data/ingredients";
-import { TrendingUp, Zap, Award, ArrowRight, Lightbulb, BarChart3 } from "lucide-react";
+import { TrendingUp, Zap, Award, ArrowRight, Lightbulb, BarChart3, Calendar } from "lucide-react";
 import { useLang } from "@/hooks/useLang";
+import { MealPlan } from "@/utils/mealGenerator";
 
 interface BestValueInsightsProps {
   ingredients: Ingredient[];
+  meals?: MealPlan[];
 }
 
 interface SwapSuggestion {
@@ -16,9 +18,11 @@ interface SwapSuggestion {
   calorieChange: number;
   reason: string;
   reasonMY: string;
+  days: string[];   // e.g. ["Monday", "Wednesday"]
+  daysMY: string[];
 }
 
-export function BestValueInsights({ ingredients }: BestValueInsightsProps) {
+export function BestValueInsights({ ingredients, meals = [] }: BestValueInsightsProps) {
   const { lang, t } = useLang();
   const available = ingredients.filter(i => i.isAvailable);
 
