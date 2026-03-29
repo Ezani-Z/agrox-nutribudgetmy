@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MealCard } from "@/components/MealCard";
+import { MealCard, MealCardOverlay } from "@/components/MealCard";
 import { BudgetSummary } from "@/components/BudgetSummary";
 import { IngredientManager } from "@/components/IngredientManager";
 import { defaultIngredients, Ingredient } from "@/data/ingredients";
@@ -14,6 +14,8 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  DragOverlay,
+  type DragStartEvent,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
@@ -41,6 +43,7 @@ const Index = () => {
   const [lockedMealIds, setLockedMealIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showConfirm, setShowConfirm] = useState(false);
+  const [activeMealId, setActiveMealId] = useState<string | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
@@ -169,7 +172,13 @@ const Index = () => {
                       </p>
                     )}
                   </div>
-                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={(e: DragStartEvent) => setActiveMealId(e.active.id as string)}
+                    onDragEnd={(e: DragEndEvent) => { handleDragEnd(e); setActiveMealId(null); }}
+                    onDragCancel={() => setActiveMealId(null)}
+                  >
                     <SortableContext items={meals.map(m => m.id)} strategy={rectSortingStrategy}>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {meals.map((meal, i) => (
@@ -183,6 +192,11 @@ const Index = () => {
                         ))}
                       </div>
                     </SortableContext>
+                    <DragOverlay>
+                      {activeMealId ? (
+                        <MealCardOverlay meal={meals.find(m => m.id === activeMealId)!} />
+                      ) : null}
+                    </DragOverlay>
                   </DndContext>
                 </div>
               </>
