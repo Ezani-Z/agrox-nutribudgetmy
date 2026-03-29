@@ -1,6 +1,6 @@
 export type IngredientCategory = "carb" | "protein" | "vegetable" | "fruit";
 
-export type StoreId = "default" | "lotus" | "speedmart" | "wellmart" | "mydin";
+export type StoreId = "default" | "lotus" | "speedmart" | "wellmart" | "mydin" | "custom";
 
 export interface StoreInfo {
   id: StoreId;
@@ -14,6 +14,7 @@ export const stores: StoreInfo[] = [
   { id: "speedmart", name: "99 Speedmart", nameMY: "99 Speedmart" },
   { id: "wellmart", name: "Wellmart", nameMY: "Wellmart" },
   { id: "mydin", name: "Mydin", nameMY: "Mydin" },
+  { id: "custom", name: "My Prices", nameMY: "Harga Saya" },
 ];
 
 export interface Ingredient {
@@ -32,7 +33,7 @@ export interface Ingredient {
 }
 
 function sp(def: number, lotus: number, speedmart: number, wellmart: number, mydin: number): Record<StoreId, number> {
-  return { default: def, lotus, speedmart, wellmart, mydin };
+  return { default: def, lotus, speedmart, wellmart, mydin, custom: def };
 }
 
 export const defaultIngredients: Ingredient[] = [
