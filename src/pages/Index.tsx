@@ -124,6 +124,31 @@ const Index = () => {
     });
   }, []);
 
+  const handleSwapComponent = useCallback((mealId: string, slot: "carb" | "protein" | "vegetable" | "fruit", newIngredient: Ingredient) => {
+    setMeals(prev => prev.map(meal => {
+      if (meal.id !== mealId) return meal;
+      const updated = { ...meal, [slot]: newIngredient };
+      const totalCost = updated.carb.pricePerServing + updated.protein.pricePerServing + updated.vegetable.pricePerServing + updated.fruit.pricePerServing;
+      const totalWeight = updated.carb.servingSize + updated.protein.servingSize + updated.vegetable.servingSize + updated.fruit.servingSize;
+      const carbRatio = updated.carb.servingSize / totalWeight;
+      const proteinRatio = updated.protein.servingSize / totalWeight;
+      const vegFruitRatio = (updated.vegetable.servingSize + updated.fruit.servingSize) / totalWeight;
+      const score = 100 - (
+        Math.abs(carbRatio - 0.25) * 100 +
+        Math.abs(proteinRatio - 0.25) * 100 +
+        Math.abs(vegFruitRatio - 0.50) * 100
+      );
+      return {
+        ...updated,
+        totalCost: Math.round(totalCost * 100) / 100,
+        nutritionScore: Math.max(0, Math.round(score)),
+        carbRatio: Math.round(carbRatio * 100),
+        proteinRatio: Math.round(proteinRatio * 100),
+        vegFruitRatio: Math.round(vegFruitRatio * 100),
+      };
+    }));
+  }, []);
+
   if (isLoading) return <LoadingScreen lang={lang} />;
 
   return (
