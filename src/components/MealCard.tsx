@@ -135,3 +135,33 @@ export function MealCard({ meal, index, isLocked = false, onToggleLock }: MealCa
     </Card>
   );
 }
+
+export function MealCardOverlay({ meal }: { meal: MealPlan }) {
+  const status = getBudgetStatus(meal.totalCost);
+  const config = statusConfig[status];
+
+  return (
+    <Card className="overflow-hidden border-primary/50 shadow-2xl ring-2 ring-primary/30 rotate-2 scale-105 w-full max-w-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">{meal.day}</CardTitle>
+          <Badge variant="outline" className={config.className}>
+            {config.label}
+          </Badge>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-2xl font-bold text-primary">RM{meal.totalCost.toFixed(2)}</span>
+          <span className="text-sm text-muted-foreground">/ student</span>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <span className="text-muted-foreground">🌾 {meal.carb.name}</span>
+          <span className="text-muted-foreground">🍗 {meal.protein.name}</span>
+          <span className="text-muted-foreground">🥬 {meal.vegetable.name}</span>
+          <span className="text-muted-foreground">🍎 {meal.fruit.name}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
