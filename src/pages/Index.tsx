@@ -1,13 +1,12 @@
 import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MealCard, MealCardOverlay } from "@/components/MealCard";
 import { BudgetSummary } from "@/components/BudgetSummary";
 import { IngredientManager } from "@/components/IngredientManager";
-import { defaultIngredients, Ingredient, StoreId, stores } from "@/data/ingredients";
+import { defaultIngredients, Ingredient } from "@/data/ingredients";
 import { generateWeeklyMealPlan, MealPlan } from "@/utils/mealGenerator";
-import { Sparkles, UtensilsCrossed, Database, BarChart3, Download, Store, Globe, TrendingUp } from "lucide-react";
+import { Sparkles, UtensilsCrossed, Database, BarChart3, Download, Globe, TrendingUp } from "lucide-react";
 import { exportMealPlanPdf } from "@/utils/exportPdf";
 import { useLang } from "@/hooks/useLang";
 import {
@@ -49,7 +48,6 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showConfirm, setShowConfirm] = useState(false);
   const [activeMealId, setActiveMealId] = useState<string | null>(null);
-  const [selectedStore, setSelectedStore] = useState<StoreId>("default");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -86,7 +84,7 @@ const Index = () => {
   const handleGenerate = useCallback(() => {
     const lockedMeals = meals.filter(m => lockedMealIds.has(m.id));
     const lockedDays = new Set(lockedMeals.map(m => m.day));
-    const newPlan = generateWeeklyMealPlan(ingredients, lockedDays, selectedStore);
+    const newPlan = generateWeeklyMealPlan(ingredients, lockedDays);
     const combined = [
       ...lockedMeals,
       ...newPlan,
@@ -98,12 +96,11 @@ const Index = () => {
     setActiveTab("dashboard");
     if (combined.length > 0) {
       const regenerated = newPlan.length;
-      const storeName = stores.find(s => s.id === selectedStore)?.name ?? selectedStore;
       toast({
         title: t("Meal Plan Generated", "Pelan Hidangan Dijana"),
         description: t(
-          `${regenerated} meal(s) regenerated, ${lockedMeals.length} locked. Store: ${storeName}`,
-          `${regenerated} hidangan dijana semula, ${lockedMeals.length} dikunci. Kedai: ${storeName}`
+          `${regenerated} meal(s) regenerated, ${lockedMeals.length} locked.`,
+          `${regenerated} hidangan dijana semula, ${lockedMeals.length} dikunci.`
         ),
       });
     } else {
@@ -116,7 +113,7 @@ const Index = () => {
         variant: "destructive",
       });
     }
-  }, [ingredients, meals, lockedMealIds, selectedStore, t]);
+  }, [ingredients, meals, lockedMealIds, t]);
 
   const handleToggleLock = useCallback((mealId: string) => {
     setLockedMealIds(prev => {
@@ -145,28 +142,10 @@ const Index = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Language toggle */}
             <Button variant="outline" size="sm" className="gap-1.5" onClick={toggle}>
               <Globe className="h-4 w-4" />
               {lang === "en" ? "MY" : "EN"}
             </Button>
-
-            {/* Store selector */}
-            <div className="hidden md:flex items-center gap-1">
-              <Store className="h-4 w-4 text-muted-foreground" />
-              <Select value={selectedStore} onValueChange={(v) => setSelectedStore(v as StoreId)}>
-                <SelectTrigger className="w-40 h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {stores.map(s => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {lang === "en" ? s.name : s.nameMY}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
             {meals.length > 0 && (
               <Button variant="outline" size="sm" className="gap-2" onClick={() => exportMealPlanPdf(meals)}>
@@ -212,24 +191,12 @@ const Index = () => {
                     "Jana pelan hidangan mingguan yang mengikuti garis panduan Suku Suku Separuh KKM dan kekal dalam bajet RMT RM3.50 – RM4.00 setiap pelajar."
                   )}
                 </p>
-
-                <div className="flex items-center gap-2 mb-4">
-                  <Store className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">{t("Select store:", "Pilih kedai:")}</span>
-                  <Select value={selectedStore} onValueChange={(v) => setSelectedStore(v as StoreId)}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {stores.map(s => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {lang === "en" ? s.name : s.nameMY}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
+                <p className="text-sm text-muted-foreground mb-4">
+                  {t(
+                    "💡 Tip: Go to the Ingredients tab to set your own local prices before generating.",
+                    "💡 Tip: Pergi ke tab Bahan untuk tetapkan harga pasaran tempatan anda sebelum menjana."
+                  )}
+                </p>
                 <Button onClick={handleGenerate} size="lg" className="gap-2">
                   <Sparkles className="h-5 w-5" />
                   {t("Generate First Meal Plan", "Jana Pelan Pertama")}
@@ -284,13 +251,11 @@ const Index = () => {
             <IngredientManager
               ingredients={ingredients}
               onUpdate={handleUpdateIngredients}
-              selectedStore={selectedStore}
-              onStoreChange={setSelectedStore}
             />
           </TabsContent>
 
           <TabsContent value="bestvalue">
-            <BestValueInsights ingredients={ingredients} store={selectedStore} />
+            <BestValueInsights ingredients={ingredients} />
           </TabsContent>
         </Tabs>
       </main>

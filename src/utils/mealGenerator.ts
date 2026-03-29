@@ -1,4 +1,4 @@
-import { Ingredient, StoreId, getPrice } from "@/data/ingredients";
+import { Ingredient } from "@/data/ingredients";
 
 export interface MealPlan {
   id: string;
@@ -44,7 +44,7 @@ function calculateNutritionScore(carbRatio: number, proteinRatio: number, vegFru
   return Math.max(0, Math.round(score));
 }
 
-export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set<string>, store: StoreId = "default"): MealPlan[] {
+export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set<string>): MealPlan[] {
   const available = ingredients.filter(i => i.isAvailable);
   const carbs = available.filter(i => i.category === "carb");
   const proteins = available.filter(i => i.category === "protein");
@@ -74,13 +74,13 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set
             const comboKey = `${carb.id}-${protein.id}-${veg.id}-${fruit.id}`;
             if (usedCombos.has(comboKey)) continue;
 
-            const totalCost = getPrice(carb, store) + getPrice(protein, store) + getPrice(veg, store) + getPrice(fruit, store);
+            const totalCost = carb.pricePerServing + protein.pricePerServing + veg.pricePerServing + fruit.pricePerServing;
 
             if (totalCost < BUDGET_MIN || totalCost > BUDGET_MAX) continue;
 
-            const carbRatio = getPrice(carb, store) / totalCost;
-            const proteinRatio = getPrice(protein, store) / totalCost;
-            const vegFruitRatio = (getPrice(veg, store) + getPrice(fruit, store)) / totalCost;
+            const carbRatio = carb.pricePerServing / totalCost;
+            const proteinRatio = protein.pricePerServing / totalCost;
+            const vegFruitRatio = (veg.pricePerServing + fruit.pricePerServing) / totalCost;
 
             const score = calculateNutritionScore(carbRatio, proteinRatio, vegFruitRatio);
 
