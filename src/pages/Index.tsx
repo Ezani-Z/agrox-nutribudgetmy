@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,7 +7,7 @@ import { BudgetSummary } from "@/components/BudgetSummary";
 import { IngredientManager } from "@/components/IngredientManager";
 import { defaultIngredients, Ingredient, StoreId, stores } from "@/data/ingredients";
 import { generateWeeklyMealPlan, MealPlan } from "@/utils/mealGenerator";
-import { Sparkles, UtensilsCrossed, Database, BarChart3, Download, Store, Globe } from "lucide-react";
+import { Sparkles, UtensilsCrossed, Database, BarChart3, Download, Store, Globe, TrendingUp } from "lucide-react";
 import { exportMealPlanPdf } from "@/utils/exportPdf";
 import { useLang } from "@/hooks/useLang";
 import {
@@ -25,6 +25,8 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { toast } from "@/hooks/use-toast";
+import { BestValueInsights } from "@/components/BestValueInsights";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,6 +50,12 @@ const Index = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [activeMealId, setActiveMealId] = useState<string | null>(null);
   const [selectedStore, setSelectedStore] = useState<StoreId>("default");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 2200);
+    return () => clearTimeout(timer);
+  }, []);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
@@ -119,6 +127,8 @@ const Index = () => {
     });
   }, []);
 
+  if (isLoading) return <LoadingScreen lang={lang} />;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-50">
@@ -181,6 +191,9 @@ const Index = () => {
             </TabsTrigger>
             <TabsTrigger value="ingredients" className="gap-2">
               <Database className="h-4 w-4" /> {t("Ingredients", "Bahan")}
+            </TabsTrigger>
+            <TabsTrigger value="bestvalue" className="gap-2">
+              <TrendingUp className="h-4 w-4" /> {t("Best Value", "Nilai Terbaik")}
             </TabsTrigger>
           </TabsList>
 
@@ -274,6 +287,10 @@ const Index = () => {
               selectedStore={selectedStore}
               onStoreChange={setSelectedStore}
             />
+          </TabsContent>
+
+          <TabsContent value="bestvalue">
+            <BestValueInsights ingredients={ingredients} store={selectedStore} />
           </TabsContent>
         </Tabs>
       </main>
