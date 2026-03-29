@@ -8,6 +8,18 @@ import { defaultIngredients, Ingredient } from "@/data/ingredients";
 import { generateWeeklyMealPlan, MealPlan } from "@/utils/mealGenerator";
 import { Sparkles, UtensilsCrossed, Database, BarChart3, Download } from "lucide-react";
 import { exportMealPlanPdf } from "@/utils/exportPdf";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -137,17 +149,21 @@ const Index = () => {
                       </p>
                     )}
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {meals.map((meal, i) => (
-                      <MealCard
-                        key={meal.id}
-                        meal={meal}
-                        index={i}
-                        isLocked={lockedMealIds.has(meal.id)}
-                        onToggleLock={() => handleToggleLock(meal.id)}
-                      />
-                    ))}
-                  </div>
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={meals.map(m => m.id)} strategy={rectSortingStrategy}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {meals.map((meal, i) => (
+                          <MealCard
+                            key={meal.id}
+                            meal={meal}
+                            index={i}
+                            isLocked={lockedMealIds.has(meal.id)}
+                            onToggleLock={() => handleToggleLock(meal.id)}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 </div>
               </>
             )}
