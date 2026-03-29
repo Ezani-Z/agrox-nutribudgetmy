@@ -53,7 +53,7 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">School Canteen Meal Planner</p>
             </div>
           </div>
-          <Button onClick={handleGenerate} className="gap-2">
+          <Button onClick={() => meals.length > 0 ? setShowConfirm(true) : handleGenerate()} className="gap-2">
             <Sparkles className="h-4 w-4" />
             Generate Meal Plan
           </Button>
