@@ -127,6 +127,8 @@ const Index = () => {
     });
   }, []);
 
+  if (isLoading) return <LoadingScreen lang={lang} />;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-50">
@@ -189,6 +191,9 @@ const Index = () => {
             </TabsTrigger>
             <TabsTrigger value="ingredients" className="gap-2">
               <Database className="h-4 w-4" /> {t("Ingredients", "Bahan")}
+            </TabsTrigger>
+            <TabsTrigger value="bestvalue" className="gap-2">
+              <TrendingUp className="h-4 w-4" /> {t("Best Value", "Nilai Terbaik")}
             </TabsTrigger>
           </TabsList>
 
