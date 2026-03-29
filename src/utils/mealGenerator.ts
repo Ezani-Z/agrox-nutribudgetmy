@@ -58,14 +58,23 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set
   const mealPlans: MealPlan[] = [];
   const usedCombos = new Set<string>();
 
+  // Track ingredient usage across the week for variety
+  const ingredientUsage: Record<string, number> = {};
+  const trackUsage = (meal: MealPlan) => {
+    [meal.carb, meal.protein, meal.vegetable, meal.fruit].forEach(ing => {
+      ingredientUsage[ing.id] = (ingredientUsage[ing.id] || 0) + 1;
+    });
+  };
+
   for (const day of DAYS) {
     if (skipDays?.has(day.en)) continue;
-    const candidates: MealPlan[] = [];
 
     const shuffledCarbs = shuffleArray(carbs);
     const shuffledProteins = shuffleArray(proteins);
     const shuffledVegs = shuffleArray(vegetables);
     const shuffledFruits = shuffleArray(fruits);
+
+    const candidates: (MealPlan & { varietyScore: number })[] = [];
 
     for (const carb of shuffledCarbs) {
       for (const protein of shuffledProteins) {
@@ -75,17 +84,21 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set
             if (usedCombos.has(comboKey)) continue;
 
             const totalCost = carb.pricePerServing + protein.pricePerServing + veg.pricePerServing + fruit.pricePerServing;
-
             if (totalCost < BUDGET_MIN || totalCost > BUDGET_MAX) continue;
 
-            // Use serving size (grams) — not price — to measure plate proportion
             const totalWeight = carb.servingSize + protein.servingSize + veg.servingSize + fruit.servingSize;
-
             const carbRatio = carb.servingSize / totalWeight;
             const proteinRatio = protein.servingSize / totalWeight;
             const vegFruitRatio = (veg.servingSize + fruit.servingSize) / totalWeight;
-
             const score = calculateNutritionScore(carbRatio, proteinRatio, vegFruitRatio);
+
+            if (score < 70) continue;
+
+            // Penalize reuse of same ingredients across the week
+            const reusePenalty = [carb, protein, veg, fruit].reduce(
+              (pen, ing) => pen + (ingredientUsage[ing.id] || 0) * 15, 0
+            );
+            const varietyScore = score - reusePenalty;
 
             candidates.push({
               id: `meal-${day.en}`,
@@ -100,6 +113,7 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set
               carbRatio: Math.round(carbRatio * 100),
               proteinRatio: Math.round(proteinRatio * 100),
               vegFruitRatio: Math.round(vegFruitRatio * 100),
+              varietyScore,
             });
           }
         }
@@ -107,29 +121,14 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set
     }
 
     if (candidates.length > 0) {
-      // First, try to find candidates with score >= 85 (as per PRD)
-      const highScoringCandidates = candidates.filter(c => c.nutritionScore >= 85);
-      if (highScoringCandidates.length > 0) {
-        // Select randomly from high scoring candidates for variety
-        const chosen = highScoringCandidates[Math.floor(Math.random() * highScoringCandidates.length)];
-        usedCombos.add(`${chosen.carb.id}-${chosen.protein.id}-${chosen.vegetable.id}-${chosen.fruit.id}`);
-        mealPlans.push(chosen);
-      } else {
-        // Fall back to original logic if no high scoring candidates
-        candidates.sort((a, b) => b.nutritionScore - a.nutritionScore);
-        const bestScore = candidates[0].nutritionScore;
-        const topCandidates = candidates.filter(c => c.nutritionScore >= bestScore - 15);
-        if (topCandidates.length === 0) {
-          // Fallback to all candidates if filtering results in empty array
-          const chosen = candidates[Math.floor(Math.random() * candidates.length)];
-          usedCombos.add(`${chosen.carb.id}-${chosen.protein.id}-${chosen.vegetable.id}-${chosen.fruit.id}`);
-          mealPlans.push(chosen);
-        } else {
-          const chosen = topCandidates[Math.floor(Math.random() * topCandidates.length)];
-          usedCombos.add(`${chosen.carb.id}-${chosen.protein.id}-${chosen.vegetable.id}-${chosen.fruit.id}`);
-          mealPlans.push(chosen);
-        }
-      }
+      // Sort by variety score (nutrition - reuse penalty), pick from top tier
+      candidates.sort((a, b) => b.varietyScore - a.varietyScore);
+      const bestVariety = candidates[0].varietyScore;
+      const topCandidates = candidates.filter(c => c.varietyScore >= bestVariety - 10);
+      const chosen = topCandidates[Math.floor(Math.random() * topCandidates.length)];
+      usedCombos.add(`${chosen.carb.id}-${chosen.protein.id}-${chosen.vegetable.id}-${chosen.fruit.id}`);
+      trackUsage(chosen);
+      mealPlans.push(chosen);
     }
   }
 
