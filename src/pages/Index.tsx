@@ -290,7 +290,7 @@ const Index = () => {
       <footer className="border-t py-4 mt-8">
         <div className="container text-center text-xs text-muted-foreground">
           {t(
-            "NutriBudget MY · PutraHack 2026 · Theme: Food Safety",
+            "NutriBudget MY · PutraHack 2026 · Theme: Food Security",
             "NutriBudget MY · PutraHack 2026 · Tema: Keselamatan Makanan"
           )}
         </div>
