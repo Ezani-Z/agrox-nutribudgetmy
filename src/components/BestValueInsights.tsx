@@ -1,11 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Ingredient, IngredientCategory, getProteinPerRM, getCaloriesPerRM, categoryLabels } from "@/data/ingredients";
-import { TrendingUp, Zap, Award, ArrowRight, Lightbulb, BarChart3 } from "lucide-react";
+import { TrendingUp, Zap, Award, ArrowRight, Lightbulb, BarChart3, Calendar } from "lucide-react";
 import { useLang } from "@/hooks/useLang";
+import { MealPlan } from "@/utils/mealGenerator";
 
 interface BestValueInsightsProps {
   ingredients: Ingredient[];
+  meals?: MealPlan[];
 }
 
 interface SwapSuggestion {
@@ -16,9 +18,11 @@ interface SwapSuggestion {
   calorieChange: number;
   reason: string;
   reasonMY: string;
+  days: string[];   // e.g. ["Monday", "Wednesday"]
+  daysMY: string[];
 }
 
-export function BestValueInsights({ ingredients }: BestValueInsightsProps) {
+export function BestValueInsights({ ingredients, meals = [] }: BestValueInsightsProps) {
   const { lang, t } = useLang();
   const available = ingredients.filter(i => i.isAvailable);
 
@@ -60,12 +64,22 @@ export function BestValueInsights({ ingredients }: BestValueInsightsProps) {
           const proteinPerRMExpensive = getProteinPerRM(expensive);
           const ratio = proteinPerRMExpensive > 0 ? (proteinPerRMCheap / proteinPerRMExpensive).toFixed(1) : "∞";
 
+          // Find which meal days use the expensive ingredient
+          const affectedMeals = meals.filter(m => {
+            const slot = cat === "carb" ? m.carb : cat === "protein" ? m.protein : cat === "vegetable" ? m.vegetable : m.fruit;
+            return slot.id === expensive.id;
+          });
+          const days = affectedMeals.map(m => m.day);
+          const daysMY = affectedMeals.map(m => m.dayMY);
+
           swaps.push({
             from: expensive,
             to: cheap,
             savingsRM: savings,
             proteinGain,
             calorieChange: cheap.calories - expensive.calories,
+            days,
+            daysMY,
             reason: `Swap ${getName(expensive)} → ${getName(cheap)}: Save RM${savings.toFixed(2)}/serving${proteinGain > 0 ? ` and gain ${proteinGain}g protein` : ""}. ${ratio}× better protein/RM.`,
             reasonMY: `Tukar ${getName(expensive)} → ${getName(cheap)}: Jimat RM${savings.toFixed(2)}/hidangan${proteinGain > 0 ? ` dan dapat ${proteinGain}g lebih protein` : ""}. ${ratio}× lebih baik protein/RM.`,
           });
@@ -148,7 +162,17 @@ export function BestValueInsights({ ingredients }: BestValueInsightsProps) {
           </CardHeader>
           <CardContent className="space-y-3">
             {topSwaps.map((swap, i) => (
-              <div key={i} className="p-3 rounded-lg bg-muted/40 border border-border/40 space-y-1">
+              <div key={i} className="p-3 rounded-lg bg-muted/40 border border-border/40 space-y-1.5">
+                {swap.days.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Calendar className="h-3 w-3 text-muted-foreground shrink-0" />
+                    {(lang === "en" ? swap.days : swap.daysMY).map(day => (
+                      <Badge key={day} variant="secondary" className="text-[10px] px-1.5 py-0">
+                        {day}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Badge variant="outline" className="text-xs shrink-0">
                     {getCatLabel(swap.from.category)}
@@ -172,6 +196,11 @@ export function BestValueInsights({ ingredients }: BestValueInsightsProps) {
                     </Badge>
                   )}
                 </div>
+                {swap.days.length === 0 && meals.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground italic">
+                    {t("Not used in current plan", "Tidak digunakan dalam pelan semasa")}
+                  </p>
+                )}
               </div>
             ))}
           </CardContent>
