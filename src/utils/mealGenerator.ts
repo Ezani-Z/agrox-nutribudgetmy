@@ -51,6 +51,7 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[], skipDays?: Set
   const usedCombos = new Set<string>();
 
   for (const day of DAYS) {
+    if (skipDays?.has(day)) continue;
     const candidates: MealPlan[] = [];
 
     const shuffledCarbs = shuffleArray(carbs);
