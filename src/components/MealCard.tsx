@@ -3,7 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MealPlan, getBudgetStatus } from "@/utils/mealGenerator";
 import { NutritionPieChart } from "./NutritionPieChart";
-import { UtensilsCrossed, Leaf, Apple, Wheat, Lock, Unlock } from "lucide-react";
+import { UtensilsCrossed, Leaf, Apple, Wheat, Lock, Unlock, GripVertical } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface MealCardProps {
   meal: MealPlan;
