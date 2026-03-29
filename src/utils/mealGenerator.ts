@@ -49,6 +49,7 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[]): MealPlan[] {
 
   const mealPlans: MealPlan[] = [];
   const usedCombos = new Set<string>();
+  const batchId = Date.now();
 
   for (const day of DAYS) {
     let bestMeal: MealPlan | null = null;
@@ -80,7 +81,7 @@ export function generateWeeklyMealPlan(ingredients: Ingredient[]): MealPlan[] {
             if (score > bestScore) {
               bestScore = score;
               bestMeal = {
-                id: `meal-${day}`,
+                id: `meal-${batchId}-${day}`,
                 day,
                 carb,
                 protein,
